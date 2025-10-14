@@ -48,8 +48,6 @@ export default function HomePage() {
                 productQuery = productQuery.eq('category', selectedCategory);
             }
             if (searchQuery) {
-                // Use textSearch for more robust searching if you have pg_tgrm extension enabled
-                // Or stick with ilike for simple matching
                 productQuery = productQuery.ilike('name', `%${searchQuery}%`);
             }
             const { data: productData } = await productQuery.order('created_at', { ascending: false }).limit(20);
