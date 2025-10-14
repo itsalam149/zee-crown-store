@@ -1,47 +1,50 @@
 'use client';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+
+import { useRouter, useSearchParams } from 'next/navigation';
+import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { LucideProps } from 'lucide-react';
 
 interface CategoryItemProps {
     name: string;
-    Icon: React.ComponentType<LucideProps>;
+    Icon: LucideIcon;
     isSelected: boolean;
 }
 
 export default function CategoryItem({ name, Icon, isSelected }: CategoryItemProps) {
     const router = useRouter();
-    const pathname = usePathname();
     const searchParams = useSearchParams();
 
     const handleClick = () => {
-        const current = new URLSearchParams(Array.from(searchParams.entries()));
+        const currentQuery = new URLSearchParams(Array.from(searchParams.entries()));
+
         if (name === 'All') {
-            current.delete('category');
+            currentQuery.delete('category');
         } else {
-            current.set('category', name);
+            currentQuery.set('category', name);
         }
-        const search = current.toString();
-        const query = search ? `?${search}` : "";
-        router.push(`${pathname}${query}`);
+
+        const search = currentQuery.toString();
+        const query = search ? `?${search}` : '';
+
+        router.push(`/${query}`);
     };
 
     return (
-        <button
+        <div
             onClick={handleClick}
-            className="flex flex-col items-center justify-center space-y-2 group flex-shrink-0 w-full"
+            className="flex flex-col items-center justify-center gap-2 cursor-pointer flex-shrink-0 w-20"
         >
             <div
                 className={cn(
-                    'w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300 ease-out-expo transform',
-                    isSelected
-                        ? 'bg-white/20 scale-110' // Selected state on a dark background
-                        : 'bg-white/10 group-hover:bg-white/20 group-hover:scale-105' // Unselected state
+                    'w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300',
+                    isSelected ? 'bg-primary scale-110' : 'bg-primary/20 group-hover:bg-primary/30'
                 )}
             >
-                <Icon className="w-7 h-7 text-white" />
+                <Icon className={cn('h-8 w-8 transition-colors', isSelected ? 'text-white' : 'text-primary/80')} />
             </div>
-            <span className="text-xs font-semibold capitalize text-white/80">{name}</span>
-        </button>
+            <p className={cn('text-xs font-semibold capitalize transition-colors', isSelected ? 'text-white' : 'text-white/70')}>
+                {name}
+            </p>
+        </div>
     );
 }
