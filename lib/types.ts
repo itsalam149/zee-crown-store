@@ -1,3 +1,4 @@
+// Based on your Supabase schema from image_0a1f9a.png
 export interface Product {
     id: string;
     name: string;

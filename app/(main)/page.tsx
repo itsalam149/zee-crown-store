@@ -34,6 +34,7 @@ export default function HomePage() {
         const fetchData = async () => {
             setLoading(true);
 
+            // Fetch Banners
             let bannerQuery = supabase.from('banners').select('*').eq('is_active', true);
             if (selectedCategory !== 'All') {
                 bannerQuery = bannerQuery.in('category', [selectedCategory, 'All']);
@@ -41,14 +42,17 @@ export default function HomePage() {
             const { data: bannerData } = await bannerQuery.order('sort_order');
             setBanners(bannerData || []);
 
+            // Fetch Products
             let productQuery = supabase.from('products').select('*');
             if (selectedCategory !== 'All') {
                 productQuery = productQuery.eq('category', selectedCategory);
             }
             if (searchQuery) {
+                // Use textSearch for more robust searching if you have pg_tgrm extension enabled
+                // Or stick with ilike for simple matching
                 productQuery = productQuery.ilike('name', `%${searchQuery}%`);
             }
-            const { data: productData } = await productQuery.order('id', { ascending: false }).limit(20);
+            const { data: productData } = await productQuery.order('created_at', { ascending: false }).limit(20);
             setProducts(productData || []);
 
             setLoading(false);
@@ -62,6 +66,7 @@ export default function HomePage() {
             <div className="max-w-xl mx-auto">
                 <SearchBar initialQuery={searchQuery} />
             </div>
+
             <BannerSlider banners={banners} />
 
             <div className="flex justify-center items-center space-x-2 sm:space-x-4 overflow-x-auto pb-2 -mx-4 px-4">
@@ -76,21 +81,22 @@ export default function HomePage() {
             </div>
 
             <h2 className="text-2xl font-bold text-center capitalize">
-                {selectedCategory === 'All' ? "Featured Products" : `${selectedCategory} Products`}
+                {selectedCategory === 'All' ? "Featured Products" : `${selectedCategory}`}
             </h2>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {loading
                     ? Array.from({ length: 10 }).map((_, i) => <ProductCardSkeleton key={i} />)
                     : <>
+                        {/* Show upload card only for 'All' and 'medicine' categories */}
                         {(selectedCategory === 'All' || selectedCategory === 'medicine') && <UploadPrescriptionCard />}
                         {products.map((product) => <ProductCard key={product.id} product={product} />)}
                     </>
                 }
             </div>
             {!loading && products.length === 0 && (
-                <div className="text-center py-12 text-gray-500 col-span-full">
-                    <p>No products found for this category.</p>
+                <div className="col-span-full text-center py-12 text-gray-500">
+                    <p>No products found.</p>
                 </div>
             )}
         </div>

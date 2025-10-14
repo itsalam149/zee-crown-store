@@ -1,7 +1,7 @@
 import { Order } from "@/lib/types";
 import Link from "next/link";
 
-const statusStyles = {
+const statusStyles: { [key: string]: string } = {
     pending: 'bg-yellow-100 text-yellow-800',
     processing: 'bg-blue-100 text-blue-800',
     shipped: 'bg-indigo-100 text-indigo-800',
@@ -21,7 +21,7 @@ export default function OrderCard({ order }: { order: Order }) {
                         })}
                     </p>
                 </div>
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusStyles[order.status] || 'bg-gray-100 text-gray-800'}`}>
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full capitalize ${statusStyles[order.status] || 'bg-gray-100 text-gray-800'}`}>
                     {order.status}
                 </span>
             </div>
