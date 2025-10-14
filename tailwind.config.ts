@@ -8,23 +8,41 @@ const config: Config = {
     ],
     theme: {
         extend: {
+            fontFamily: {
+                sans: ['var(--font-inter)', 'sans-serif'],
+            },
             colors: {
                 primary: '#FF7C30',
+                'primary-hover': '#E86A20',
                 lightPrimary: 'rgba(255, 102, 14, 0.1)',
-                light: '#f8e8df',
-                grayBG: '#f5f5f5',
-                'dark-gray': '#38434D',
-                gray: '#808080',
-                'light-gray': '#c2c2c2',
-                'lighter-gray': '#e7e7e6',
-                blue: '#327ad6',
-                red: '#FF0000',
+                grayBG: '#f7f8fa',
+                'dark-gray': '#1a202c', // Deeper black for text
+                gray: '#718096',
+                'light-gray': '#a0aec0',
+                'lighter-gray': '#edf2f7',
+                red: '#e53e3e',
                 white: '#FFF',
-                black: '#000',
+            },
+            boxShadow: {
+                'subtle': '0 4px 12px rgba(0, 0, 0, 0.05)',
+                'medium': '0 10px 20px rgba(0, 0, 0, 0.07)',
+                'lifted': '0 20px 40px rgba(0, 0, 0, 0.1)',
+            },
+            transitionTimingFunction: {
+                'out-expo': 'cubic-bezier(0.19, 1, 0.22, 1)',
+            },
+            keyframes: {
+                'fade-in-up': {
+                    '0%': { opacity: '0', transform: 'translateY(10px)' },
+                    '100%': { opacity: '1', transform: 'translateY(0)' },
+                },
+            },
+            animation: {
+                'fade-in-up': 'fade-in-up 0.5s ease-out forwards',
             },
         },
     },
-    plugins: [],
+    plugins: [], // Removed the 3D plugin
 };
 
 export default config;

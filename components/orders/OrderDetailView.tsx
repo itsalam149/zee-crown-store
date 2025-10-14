@@ -1,10 +1,12 @@
 'use client'
 import { Order } from "@/lib/types";
 import Image from "next/image";
+import BackButton from "../ui/BackButton";
 
 export default function OrderDetailView({ order }: { order: Order }) {
     return (
         <div className="space-y-6 max-w-4xl mx-auto">
+            <BackButton />
             <h1 className="text-3xl font-bold">Order Details</h1>
             <div className="bg-white p-6 rounded-lg shadow-md space-y-2">
                 <p><strong>Order ID:</strong> #{order.id.slice(0, 8)}</p>
@@ -13,7 +15,6 @@ export default function OrderDetailView({ order }: { order: Order }) {
                 <p><strong>Total:</strong> <span className="font-bold text-primary">₹{order.total_price.toFixed(2)}</span></p>
                 <p className="mt-4"><strong>Shipping Address:</strong><br />{order.shipping_address}</p>
             </div>
-
             <h2 className="text-2xl font-bold">Items</h2>
             <div className="space-y-4">
                 {order.order_items.map(item => (

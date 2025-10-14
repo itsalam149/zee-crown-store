@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Banner } from '@/lib/types';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function BannerSlider({ banners }: { banners: Banner[] }) {
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -22,7 +21,7 @@ export default function BannerSlider({ banners }: { banners: Banner[] }) {
                     setCurrentIndex((prevIndex) =>
                         prevIndex === banners.length - 1 ? 0 : prevIndex + 1
                     ),
-                3000
+                4000 // Slightly longer duration
             );
         }
         return () => {
@@ -37,18 +36,19 @@ export default function BannerSlider({ banners }: { banners: Banner[] }) {
     }
 
     return (
-        <div className="relative w-full mx-auto overflow-hidden rounded-lg">
+        <div className="relative w-full mx-auto overflow-hidden rounded-lg shadow-lg">
             <div
-                className="whitespace-nowrap transition-transform duration-500"
+                className="flex transition-transform duration-700 ease-in-out" // Smoother transition
                 style={{ transform: `translateX(-${currentIndex * 100}%)` }}
             >
                 {banners.map((banner) => (
-                    <div key={banner.id} className="inline-block w-full aspect-[2/1] md:aspect-[3/1] relative">
+                    <div key={banner.id} className="flex-shrink-0 w-full aspect-[2/1] md:aspect-[3/1] relative">
                         <Image
                             src={banner.image_url}
                             alt="Promotional Banner"
-                            layout="fill"
-                            objectFit="cover"
+                            fill
+                            sizes="(max-width: 768px) 100vw, 80vw"
+                            style={{ objectFit: 'cover' }}
                             priority={true}
                         />
                     </div>
@@ -60,7 +60,7 @@ export default function BannerSlider({ banners }: { banners: Banner[] }) {
                     <button
                         key={index}
                         onClick={() => setCurrentIndex(index)}
-                        className={`h-2 rounded-full transition-all ${currentIndex === index ? 'w-6 bg-primary' : 'w-2 bg-white/50'
+                        className={`h-2 rounded-full transition-all duration-300 ${currentIndex === index ? 'w-6 bg-primary' : 'w-2 bg-white/70 hover:bg-white'
                             }`}
                     />
                 ))}

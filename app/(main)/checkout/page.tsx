@@ -1,6 +1,7 @@
 'use client'
 import { createClient } from '@/lib/supabase-client';
 import { useState } from 'react';
+import BackButton from '@/components/ui/BackButton';
 
 export default function CheckoutPage() {
     const supabase = createClient();
@@ -11,17 +12,15 @@ export default function CheckoutPage() {
     const handlePlaceOrder = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsProcessing(true);
-        // This is a placeholder for your order creation logic
-        // You would call your `api/create-order` endpoint here
         alert('Order placed (simulation)!');
-        // In a real app, you would redirect to an order confirmation page
         setIsProcessing(false);
     };
 
     return (
         <div>
-            <h1 className="text-3xl font-bold mb-6">Checkout</h1>
-            <form onSubmit={handlePlaceOrder} className="bg-white p-6 rounded-lg shadow-md">
+            <BackButton />
+            <h1 className="text-3xl font-bold mb-6 text-center">Checkout</h1>
+            <form onSubmit={handlePlaceOrder} className="bg-white p-6 rounded-lg shadow-md max-w-2xl mx-auto">
                 <div className="space-y-4">
                     <div>
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700">Full Name</label>

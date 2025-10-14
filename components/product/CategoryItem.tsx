@@ -16,7 +16,11 @@ export default function CategoryItem({ name, Icon, isSelected }: CategoryItemPro
 
     const handleClick = () => {
         const current = new URLSearchParams(Array.from(searchParams.entries()));
-        current.set('category', name);
+        if (name === 'All') {
+            current.delete('category');
+        } else {
+            current.set('category', name);
+        }
         const search = current.toString();
         const query = search ? `?${search}` : "";
         router.push(`${pathname}${query}`);
@@ -25,20 +29,19 @@ export default function CategoryItem({ name, Icon, isSelected }: CategoryItemPro
     return (
         <button
             onClick={handleClick}
-            className={cn(
-                'flex flex-col items-center justify-center space-y-2 group flex-shrink-0',
-                isSelected ? 'text-primary' : 'text-gray-500'
-            )}
+            className="flex flex-col items-center justify-center space-y-2 group flex-shrink-0 w-full"
         >
             <div
                 className={cn(
-                    'w-16 h-16 rounded-full flex items-center justify-center transition-colors',
-                    isSelected ? 'bg-primary text-white' : 'bg-lighter-gray text-dark-gray group-hover:bg-light'
+                    'w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300 ease-out-expo transform',
+                    isSelected
+                        ? 'bg-white/20 scale-110' // Selected state on a dark background
+                        : 'bg-white/10 group-hover:bg-white/20 group-hover:scale-105' // Unselected state
                 )}
             >
-                <Icon className="w-6 h-6" />
+                <Icon className="w-7 h-7 text-white" />
             </div>
-            <span className="text-xs font-medium capitalize">{name}</span>
+            <span className="text-xs font-semibold capitalize text-white/80">{name}</span>
         </button>
     );
 }

@@ -1,4 +1,3 @@
-// Based on your Supabase schema from image_0a1f9a.png
 export interface Product {
     id: string;
     name: string;
@@ -19,7 +18,7 @@ export interface Banner {
 
 export interface CartItem {
     id: string;
-    user_id: string; // This will be a session ID for guest users
+    user_id: string;
     product_id: string;
     quantity: number;
     products: Product;
@@ -45,4 +44,18 @@ export interface OrderItem {
         image_url: string;
         category: string;
     };
+}
+
+export interface Address {
+    id: string;
+    user_id: string;
+    street_address: string;
+    city: string;
+    state: string;
+    postal_code: string;
+    country: string;
+    is_default: boolean;
+    house_no?: string;
+    mobile_number?: string;
+    landmark?: string;
 }
