@@ -39,6 +39,7 @@ export default function ProductModal({ params }: { params: { slug: string } }) {
 
     const handleClose = () => {
         setShow(false);
+        // This delay allows the closing animation to finish before navigating back
         setTimeout(() => router.back(), 300);
     };
 
@@ -66,6 +67,7 @@ export default function ProductModal({ params }: { params: { slug: string } }) {
                 </button>
 
                 {product ? (
+                    // Pass the handleClose function down to the child
                     <ProductDetailModal product={product} closeModal={handleClose} />
                 ) : (
                     <div className="flex items-center justify-center w-full h-[70vh] md:h-auto">

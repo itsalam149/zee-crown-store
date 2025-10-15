@@ -6,12 +6,11 @@ import { useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 
-// Mapping categories to the new soft pastel background colors
 const categoryBgClasses: { [key: string]: string } = {
-    medicine: 'bg-theme-green-bg',
-    cosmetics: 'bg-theme-blue-bg',
-    food: 'bg-theme-red-bg',
-    perfumes: 'bg-theme-gold-bg',
+    medicine: 'from-theme-green-bg to-gray-50',
+    cosmetics: 'from-theme-blue-bg to-gray-50',
+    food: 'from-theme-red-bg to-gray-50',
+    perfumes: 'from-theme-gold-bg to-gray-50',
 };
 
 interface MainLayoutProps {
@@ -23,11 +22,10 @@ export default function MainLayout({ children, modal }: MainLayoutProps) {
     const searchParams = useSearchParams();
     const selectedCategory = useMemo(() => searchParams.get('category'), [searchParams]);
 
-    // If a category is selected, use its color; otherwise, fallback to default gray background
-    const bgColor = selectedCategory ? (categoryBgClasses[selectedCategory] || 'bg-grayBG') : 'bg-grayBG';
+    const bgGradient = selectedCategory ? (categoryBgClasses[selectedCategory] || 'from-grayBG to-gray-50') : 'from-grayBG to-gray-50';
 
     return (
-        <div className={cn("flex flex-col min-h-screen transition-colors duration-500", bgColor)}>
+        <div className={cn("flex flex-col min-h-screen bg-gradient-to-b transition-colors duration-500", bgGradient)}>
             <Navbar />
             <main className="flex-grow container mx-auto px-4 sm:px-6 md:px-8 py-6">
                 {children}

@@ -21,8 +21,6 @@ const config: Config = {
                 'lighter-gray': '#edf2f7',
                 red: '#e53e3e',
                 white: '#FFF',
-
-                // Soft pastel theme colors
                 'theme-green': '#e0f4ea',
                 'theme-green-fg': '#34d399',
                 'theme-blue': '#e6f0ff',
@@ -31,12 +29,10 @@ const config: Config = {
                 'theme-red-fg': '#f87171',
                 'theme-gold': '#fff9e6',
                 'theme-gold-fg': '#fbbf24',
-
-                // Soft/light backgrounds for buttons/cards instead of dark
-                'theme-green-bg': '#c6f1df',  // soft mint green
-                'theme-blue-bg': '#cce4ff',   // soft sky blue
-                'theme-red-bg': '#ffd6d6',    // soft pastel red/pink
-                'theme-gold-bg': '#fff4d6',   // soft cream/yellow
+                'theme-green-bg': '#f0fdf4',
+                'theme-blue-bg': '#f0f9ff',
+                'theme-red-bg': '#fff1f2',
+                'theme-gold-bg': '#fefce8',
             },
             boxShadow: {
                 subtle: '0 4px 12px rgba(0, 0, 0, 0.05)',

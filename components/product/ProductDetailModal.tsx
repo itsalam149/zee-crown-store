@@ -30,7 +30,7 @@ export default function ProductDetailModal({
             ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
             : 0;
 
-    const addToCart = async () => {
+    const handleAction = async () => {
         if (!session) {
             toast.error('Please login to continue.');
             closeModal();
@@ -38,137 +38,98 @@ export default function ProductDetailModal({
             return { success: false };
         }
 
-        const { error } = await supabase.from('cart_items').insert({
-            product_id: product.id,
-            quantity,
-            user_id: session.user.id,
-        });
+        const { data: existingItem } = await supabase
+            .from('cart_items')
+            .select('id, quantity')
+            .eq('user_id', session.user.id)
+            .eq('product_id', product.id)
+            .single();
 
-        if (error) {
-            toast.error(`Error: ${error.message}`);
-            return { success: false };
+        if (existingItem) {
+            const newQuantity = existingItem.quantity + quantity;
+            const { error } = await supabase
+                .from('cart_items')
+                .update({ quantity: newQuantity })
+                .eq('id', existingItem.id);
+            if (error) { toast.error(error.message); return { success: false }; }
+        } else {
+            const { error } = await supabase.from('cart_items').insert({
+                product_id: product.id,
+                quantity,
+                user_id: session.user.id,
+            });
+            if (error) { toast.error(error.message); return { success: false }; }
         }
 
-        router.refresh();
+        router.refresh(); // This tells Next.js to refetch the data on the underlying page.
         return { success: true };
     };
 
     const handleAddToCart = async () => {
         setIsAdding(true);
         const toastId = toast.loading('Adding to cart...');
-        const { success } = await addToCart();
+        const { success } = await handleAction();
         toast.dismiss(toastId);
 
         if (success) {
-            toast.success(`${quantity} × ${product.name} added to cart!`);
+            toast.success(`${quantity} × ${product.name} added!`);
 
-            // FIX: Navigate to the home page after 2 seconds
+            // THE FIX: Call the closeModal prop after 1 second.
             setTimeout(() => {
-                router.push('/'); // This will close the modal and go to the home page.
-            }, 2000);
+                closeModal();
+            }, 1000); // 1000 milliseconds = 1 second
 
         } else {
-            // Only re-enable the button if the process failed
             setIsAdding(false);
         }
     };
 
     const handleBuyNow = async () => {
         setIsBuying(true);
-        const toastId = toast.loading('Preparing your order...');
-        const { success } = await addToCart();
-        toast.dismiss(toastId);
+        const { success } = await handleAction();
         if (success) {
-            closeModal();
             router.push('/checkout');
+        } else {
+            setIsBuying(false);
         }
-        setIsBuying(false);
     };
 
     return (
         <div className="flex flex-col max-h-[85vh] overflow-hidden rounded-t-2xl bg-white">
-            {/* Product Image */}
             <div className="relative w-full aspect-square md:aspect-video">
-                <Image
-                    src={product.image_url}
-                    alt={product.name}
-                    fill
-                    className="object-cover rounded-t-2xl"
-                    priority
-                />
+                <Image src={product.image_url} alt={product.name} fill className="object-cover rounded-t-2xl" priority />
             </div>
-
-            {/* Product Info */}
             <div className="flex flex-col flex-grow p-6 overflow-y-auto">
-                {/* Title & Price */}
                 <div>
-                    <p className="text-xs font-semibold text-primary uppercase tracking-wider">
-                        {product.category}
-                    </p>
-                    <h1 className="text-2xl font-bold text-dark-gray tracking-tight mt-1">
-                        {product.name}
-                    </h1>
-
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wider">{product.category}</p>
+                    <h1 className="text-2xl font-bold text-dark-gray tracking-tight mt-1">{product.name}</h1>
                     <div className="flex items-baseline gap-3 mt-3">
                         <p className="text-2xl font-bold text-primary">₹{product.price}</p>
-                        {product.mrp && product.mrp > product.price && (
-                            <p className="text-gray-400 line-through">₹{product.mrp}</p>
-                        )}
-                        {discount > 0 && (
-                            <div className="text-xs font-bold bg-red-100 text-red-600 px-2 py-1 rounded-md">
-                                {discount}% OFF
-                            </div>
-                        )}
+                        {product.mrp && product.mrp > product.price && <p className="text-gray-400 line-through">₹{product.mrp}</p>}
+                        {discount > 0 && <div className="text-xs font-bold bg-red-100 text-red-600 px-2 py-1 rounded-md">{discount}% OFF</div>}
                     </div>
                 </div>
-
-                {/* Divider */}
                 <hr className="my-4 border-lighter-gray" />
-
-                {/* Description */}
                 <div className="text-gray-600 leading-relaxed text-sm">
                     <h3 className="font-bold text-dark-gray mb-2 text-base">Description</h3>
                     <p>{product.description || 'No description available.'}</p>
                 </div>
             </div>
-
-            {/* Bottom Action Bar */}
             <div className="flex-shrink-0 p-6 border-t border-lighter-gray bg-white">
                 <div className="flex items-center justify-between mb-4">
                     <p className="text-base font-semibold text-dark-gray">Quantity:</p>
                     <div className="flex items-center gap-2 bg-gray-100 rounded-full">
-                        <button
-                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                            className="p-2 text-gray-600 hover:text-primary transition-colors rounded-full"
-                            aria-label="Decrease quantity"
-                        >
-                            <Minus size={16} />
-                        </button>
+                        <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-2 text-gray-600 hover:text-primary transition-colors rounded-full"><Minus size={16} /></button>
                         <p className="text-base font-bold w-8 text-center">{quantity}</p>
-                        <button
-                            onClick={() => setQuantity(quantity + 1)}
-                            className="p-2 text-gray-600 hover:text-primary transition-colors rounded-full"
-                            aria-label="Increase quantity"
-                        >
-                            <Plus size={16} />
-                        </button>
+                        <button onClick={() => setQuantity(quantity + 1)} className="p-2 text-gray-600 hover:text-primary transition-colors rounded-full"><Plus size={16} /></button>
                     </div>
                 </div>
-
                 <div className="grid grid-cols-2 gap-3">
-                    <Button
-                        onClick={handleAddToCart}
-                        disabled={isAdding || isBuying}
-                        className="flex items-center justify-center gap-2 bg-primary/10 text-primary hover:bg-primary/20"
-                    >
+                    <Button onClick={handleAddToCart} disabled={isAdding || isBuying} className="flex items-center justify-center gap-2 bg-primary/10 text-primary hover:bg-primary/20">
                         <ShoppingCart size={18} />
                         {isAdding ? 'Adding...' : 'Add to Cart'}
                     </Button>
-                    <Button
-                        onClick={handleBuyNow}
-                        disabled={isAdding || isBuying}
-                        className="flex items-center justify-center gap-2"
-                    >
+                    <Button onClick={handleBuyNow} disabled={isAdding || isBuying} className="flex items-center justify-center gap-2">
                         <Zap size={18} />
                         {isBuying ? 'Redirecting...' : 'Buy Now'}
                     </Button>

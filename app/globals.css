@@ -4,6 +4,7 @@
 
 @layer base {
     body {
+        /* Use the custom grayBG color for consistency */
         @apply bg-grayBG text-dark-gray antialiased font-sans;
     }
 }
