@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import AuthProvider from '@/components/AuthProvider';
+import Script from 'next/script'; // Import the Script component
 
 const inter = Inter({
   subsets: ['latin'],
@@ -24,6 +25,8 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans`}>
         <AuthProvider>{children}</AuthProvider>
         <Toaster position="bottom-center" />
+        {/* Add Razorpay Checkout Script Here */}
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       </body>
     </html>
   );

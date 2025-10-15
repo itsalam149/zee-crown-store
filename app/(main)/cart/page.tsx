@@ -1,25 +1,26 @@
 "use client";
 
 import { createClient } from '@/lib/supabase-client';
-import { CartItem, ShippingRule } from '@/lib/types'; // Assuming you have these types defined
+import { CartItem } from '@/lib/types';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
+import toast from 'react-hot-toast';
 
 // UI & Icon Imports
-import CartCard from '@/components/cart/CartCard'; // Assuming this component exists
-import BackButton from '@/components/ui/BackButton'; // Assuming this component exists
-import { ShoppingCart, Loader2, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/Button'; // Assuming you use shadcn/ui or similar
+import CartCard from '@/components/cart/CartCard';
+import BackButton from '@/components/ui/BackButton';
+import Button from '@/components/ui/Button';
+import { ShoppingCart, Loader2 } from 'lucide-react';
 
-// --- UI SUB-COMPONENTS ---    
+// --- UI SUB-COMPONENTS ---
 
 /**
  * @description A progress bar and message to encourage users to get free shipping.
  */
 const FreeShippingBar = ({ subtotal, threshold }: { subtotal: number; threshold: number }) => {
-    if (!threshold || subtotal < 0) {
+    if (!threshold || subtotal <= 0) {
         return null;
     }
 
@@ -28,13 +29,13 @@ const FreeShippingBar = ({ subtotal, threshold }: { subtotal: number; threshold:
 
     if (remainingAmount > 0) {
         return (
-            <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-4 mx-4 mb-4">
+            <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-4 mb-4">
                 <p className="text-center text-sm">
                     Add <span className="font-bold">₹{remainingAmount.toFixed(2)}</span> more for FREE delivery!
                 </p>
                 <div className="w-full bg-blue-100 rounded-full h-2 mt-2 overflow-hidden">
                     <div
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                        className="bg-primary h-2 rounded-full transition-all duration-500"
                         style={{ width: `${progressPercentage}%` }}
                     />
                 </div>
@@ -43,7 +44,7 @@ const FreeShippingBar = ({ subtotal, threshold }: { subtotal: number; threshold:
     }
 
     return (
-        <div className="bg-green-50 border border-green-200 text-green-800 rounded-lg p-4 mx-4 mb-4">
+        <div className="bg-green-50 border border-green-200 text-green-800 rounded-lg p-4 mb-4">
             <p className="text-center font-semibold text-sm">🎉 Yay! You've got FREE delivery!</p>
         </div>
     );
@@ -52,15 +53,15 @@ const FreeShippingBar = ({ subtotal, threshold }: { subtotal: number; threshold:
 /**
  * @description The summary section with subtotal, shipping, and total, with a checkout button.
  */
-const CheckoutSummary = ({ subtotal, shippingFee, onCheckout }: { subtotal: number; shippingFee: number; onCheckout: () => void; }) => {
+const CheckoutSummary = ({ subtotal, shippingFee, onCheckout, isLoading }: { subtotal: number; shippingFee: number; onCheckout: () => void; isLoading: boolean; }) => {
     const total = subtotal + shippingFee;
 
     const Row = ({ title, value, isTotal = false }: { title: string; value: string; isTotal?: boolean; }) => (
         <div className="flex justify-between items-center">
-            <p className={`text-base ${isTotal ? 'font-bold text-gray-800' : 'text-gray-600'}`}>
+            <p className={`text-base ${isTotal ? 'font-bold text-dark-gray' : 'text-gray-600'}`}>
                 {title}
             </p>
-            <p className={`text-lg font-semibold ${isTotal ? 'text-primary' : 'text-gray-800'}`}>
+            <p className={`text-lg font-semibold ${isTotal ? 'text-primary' : 'text-dark-gray'}`}>
                 {value}
             </p>
         </div>
@@ -69,18 +70,20 @@ const CheckoutSummary = ({ subtotal, shippingFee, onCheckout }: { subtotal: numb
     return (
         <div className="fixed bottom-0 left-0 right-0 bg-white p-4 pt-5 rounded-t-2xl shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)] 
                         lg:relative lg:rounded-lg lg:shadow-md lg:w-96 lg:sticky lg:top-24">
+            <h2 className="text-xl font-bold mb-4">Order Summary</h2>
             <div className="space-y-3">
                 <Row title="Subtotal" value={`₹${subtotal.toFixed(2)}`} />
                 <Row title="Shipping Fee" value={shippingFee > 0 ? `₹${shippingFee.toFixed(2)}` : 'FREE'} />
                 <hr className="my-3" />
                 <Row title="Total" value={`₹${total.toFixed(2)}`} isTotal />
             </div>
-            <Button onClick={onCheckout} className="w-full mt-6" size="lg">
-                Proceed to Checkout
+            <Button onClick={onCheckout} className="w-full mt-6" disabled={isLoading || subtotal === 0}>
+                {isLoading ? 'Processing...' : 'Proceed to Checkout'}
             </Button>
         </div>
     );
 };
+
 
 /**
  * @description UI states for loading, empty cart, and errors.
@@ -93,10 +96,10 @@ const LoadingState = () => (
 
 const EmptyState = () => (
     <div className="text-center py-20 px-4">
-        <div className="bg-gray-100 w-28 h-28 rounded-full inline-flex items-center justify-center">
+        <div className="bg-lighter-gray w-28 h-28 rounded-full inline-flex items-center justify-center">
             <ShoppingCart strokeWidth={1.5} className="h-14 w-14 text-gray-400" />
         </div>
-        <h2 className="mt-6 text-2xl font-bold text-gray-800">Your Cart is Empty</h2>
+        <h2 className="mt-6 text-2xl font-bold text-dark-gray">Your Cart is Empty</h2>
         <p className="mt-2 text-gray-500">Looks like you haven't added anything yet.</p>
         <Button asChild className="mt-8">
             <Link href="/">Start Shopping</Link>
@@ -132,7 +135,7 @@ export default function CartPage() {
 
         if (error) {
             console.error('Error fetching cart items:', error);
-            // Handle error UI if needed
+            toast.error('Could not fetch your cart.');
         } else {
             setCartItems(data as CartItem[] || []);
         }
@@ -141,10 +144,10 @@ export default function CartPage() {
 
     // Initial fetch on session load
     useEffect(() => {
-        if (!session && useAuthStore.getState().isRestored) {
-            router.push('/login');
-        } else if (session) {
+        if (session) {
             fetchCartItems();
+        } else if (useAuthStore.getState().isRestored) {
+            router.push('/login');
         }
     }, [session, fetchCartItems, router]);
 
@@ -163,9 +166,8 @@ export default function CartPage() {
                 .eq('is_active', true)
                 .order('min_order_value', { ascending: false });
 
-            if (error || !data) {
-                // Fallback logic if fetching rules fails
-                const defaultThreshold = 499;
+            if (error || !data || data.length === 0) {
+                const defaultThreshold = 499; // Fallback
                 setFreeShippingThreshold(defaultThreshold);
                 setShippingFee(subtotal > 0 && subtotal < defaultThreshold ? 40 : 0);
                 return;
@@ -195,23 +197,29 @@ export default function CartPage() {
         const { error } = await supabase.from('cart_items').update({ quantity: newQuantity }).eq('id', cartItemId);
         if (error) {
             console.error('Failed to update quantity:', error);
+            toast.error('Failed to update cart.');
             setCartItems(originalItems); // Revert on error
         }
     };
 
     const removeItem = async (cartItemId: string) => {
         const originalItems = [...cartItems];
+        const removedItemName = originalItems.find(item => item.id === cartItemId)?.products.name;
         setCartItems(prev => prev.filter(item => item.id !== cartItemId));
+
+        if (removedItemName) toast.success(`${removedItemName} removed from cart.`);
 
         const { error } = await supabase.from('cart_items').delete().eq('id', cartItemId);
         if (error) {
             console.error('Failed to remove item:', error);
+            toast.error('Failed to remove item.');
             setCartItems(originalItems); // Revert on error
         }
     };
 
+
     return (
-        <div className="bg-gray-50/50 min-h-screen">
+        <div className="bg-grayBG min-h-screen">
             <div className="container mx-auto max-w-6xl p-4">
                 <div className="flex items-center mb-6">
                     <BackButton />
@@ -232,9 +240,9 @@ export default function CartPage() {
                                     <CartCard
                                         key={item.id}
                                         item={item}
-                                    // onIncrement={() => updateQuantity(item.id, item.quantity + 1)}
-                                    // onDecrement={() => updateQuantity(item.id, item.quantity - 1)}
-                                    // onRemove={() => removeItem(item.id)}
+                                        onIncrement={() => updateQuantity(item.id, item.quantity + 1)}
+                                        onDecrement={() => updateQuantity(item.id, item.quantity - 1)}
+                                        onRemove={() => removeItem(item.id)}
                                     />
                                 ))}
                             </div>
@@ -244,6 +252,7 @@ export default function CartPage() {
                             subtotal={subtotal}
                             shippingFee={shippingFee}
                             onCheckout={() => router.push('/checkout')}
+                            isLoading={loading}
                         />
                     </div>
                 )}
