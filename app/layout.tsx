@@ -4,7 +4,10 @@ import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import AuthProvider from '@/components/AuthProvider';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter'
+});
 
 export const metadata: Metadata = {
   title: 'Zee Crown',
@@ -18,12 +21,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+      <body className={`${inter.variable} font-sans`}>
+        <AuthProvider>{children}</AuthProvider>
         <Toaster position="bottom-center" />
       </body>
     </html>
   );
-} 
+}

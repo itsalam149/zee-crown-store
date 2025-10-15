@@ -1,23 +1,31 @@
 'use client';
 
-import { Camera } from 'lucide-react';
+import { Camera, Plus } from 'lucide-react';
 
 export default function UploadPrescriptionCard() {
     const handlePress = () => {
+        // Opens the WhatsApp link in a new tab
         window.open('https://wa.me/919999050773', '_blank');
     };
 
     return (
         <button
             onClick={handlePress}
-            className="group relative flex flex-col items-center justify-center p-4 border-2 border-dashed border-primary/30 rounded-lg bg-primary/10 hover:bg-primary/20 transition-all duration-300 text-center aspect-square"
+            className="group block w-full text-left rounded-xl overflow-hidden bg-white shadow-subtle transition-all duration-300 ease-out-expo hover:shadow-medium hover:-translate-y-1"
         >
-            <div className="flex flex-col items-center justify-center">
-                <Camera className="h-10 w-10 text-primary mb-3 transition-transform group-hover:scale-110" />
-                <h3 className="text-md font-bold text-white leading-tight">Upload Prescription</h3>
-                <p className="text-xs text-white/70 mt-1">
-                    Send via WhatsApp
-                </p>
+            <div className="relative w-full aspect-square overflow-hidden bg-theme-green flex items-center justify-center">
+                <Camera className="h-1/3 w-1/3 text-theme-green-fg transition-transform duration-500 ease-out-expo group-hover:scale-105" />
+            </div>
+            <div className="p-3">
+                <h3 className="text-sm font-semibold truncate text-dark-gray">Upload Prescription</h3>
+                <div className="flex items-center justify-between mt-1">
+                    <div>
+                        <span className="text-base font-bold text-theme-green-fg">Send via WhatsApp</span>
+                    </div>
+                    <div className="bg-lighter-gray p-1.5 rounded-full text-dark-gray transition-all duration-300 md:opacity-0 md:group-hover:opacity-100 md:group-hover:bg-primary md:group-hover:text-white">
+                        <Plus size={16} />
+                    </div>
+                </div>
             </div>
         </button>
     );

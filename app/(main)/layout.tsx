@@ -6,33 +6,30 @@ import { useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 
-// Using the main, darker theme colors now
+// Mapping categories to the new soft pastel background colors
 const categoryBgClasses: { [key: string]: string } = {
-    medicine: 'bg-theme-green',
-    cosmetics: 'bg-theme-blue',
-    food: 'bg-theme-red',
-    perfumes: 'bg-theme-gold',
+    medicine: 'bg-theme-green-bg',
+    cosmetics: 'bg-theme-blue-bg',
+    food: 'bg-theme-red-bg',
+    perfumes: 'bg-theme-gold-bg',
 };
 
-export default function MainLayout({
-    children,
-    modal,
-}: {
-    children: React.React.Node;
-    modal: React.React.Node;
-}) {
+interface MainLayoutProps {
+    children: React.ReactNode;
+    modal?: React.ReactNode;
+}
+
+export default function MainLayout({ children, modal }: MainLayoutProps) {
     const searchParams = useSearchParams();
     const selectedCategory = useMemo(() => searchParams.get('category'), [searchParams]);
-    const bgColor = selectedCategory ? categoryBgClasses[selectedCategory] : 'bg-grayBG';
+
+    // If a category is selected, use its color; otherwise, fallback to default gray background
+    const bgColor = selectedCategory ? (categoryBgClasses[selectedCategory] || 'bg-grayBG') : 'bg-grayBG';
 
     return (
-        // The background color of the entire page will now change
         <div className={cn("flex flex-col min-h-screen transition-colors duration-500", bgColor)}>
-            {/* Navbar remains on a consistent background for clarity */}
-            <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow-sm">
-                <Navbar />
-            </div>
-            <main className="flex-grow container mx-auto px-4 py-6">
+            <Navbar />
+            <main className="flex-grow container mx-auto px-4 sm:px-6 md:px-8 py-6">
                 {children}
                 {modal}
             </main>

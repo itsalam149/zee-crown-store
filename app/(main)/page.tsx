@@ -10,9 +10,9 @@ import ProductCardSkeleton from '@/components/skeletons/ProductCardSkeleton';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { LayoutGrid, Pill, Droplet, Dumbbell, SprayCan, PackageSearch } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
-import UploadPrescriptionCard from '@/components/ui/UploadPrescriptionCard';
 import Spinner from '@/components/ui/Spinner';
 import { cn } from '@/lib/utils';
+import UploadPrescriptionCard from '@/components/ui/UploadPrescriptionCard'; // Import the new card
 
 const PRODUCTS_PER_PAGE = 10;
 
@@ -25,7 +25,7 @@ const categories = [
 ];
 
 export default function HomePage() {
-    // ... (All data fetching logic remains the same)
+    // ... (All existing data fetching logic remains the same)
     const supabase = createClient();
     const searchParams = useSearchParams();
     const [products, setProducts] = useState<Product[]>([]);
@@ -34,6 +34,7 @@ export default function HomePage() {
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
+    const [isSearchFocused, setSearchFocused] = useState(false);
     const observer = useRef<IntersectionObserver>();
     const selectedCategory = useMemo(() => searchParams.get('category') || 'All', [searchParams]);
     const searchQuery = useMemo(() => searchParams.get('q') || '', [searchParams]);
@@ -82,48 +83,71 @@ export default function HomePage() {
         fetchData();
     }, [selectedCategory, searchQuery, supabase]);
 
-    // Conditional text color for dark backgrounds
     const textColor = selectedCategory !== 'All' ? 'text-white' : 'text-dark-gray';
 
+    // This new variable controls when to show the card
+    const showUploadCard = !searchQuery && (selectedCategory === 'All' || selectedCategory === 'medicine');
+
     return (
-        <div className="space-y-12 pb-24">
-
-            <div className="max-w-xl mx-auto"><SearchBar /></div>
-
-            <BannerSlider banners={banners} />
-
-            {/* FULL-WIDTH GRID FOR CATEGORIES ON MOBILE */}
-            <div className="grid grid-cols-5 gap-2 md:gap-4">
-                {categories.map((cat, index) => (
-                    <div key={cat.name} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${index * 100}ms` }}>
-                        <CategoryItem name={cat.name} Icon={cat.icon} isSelected={selectedCategory === cat.name} />
-                    </div>
-                ))}
+        <div className="space-y-6 pb-24">
+            <div className="max-w-xl mx-auto">
+                <SearchBar
+                    onFocus={() => setSearchFocused(true)}
+                    onBlur={() => setSearchFocused(false)}
+                />
             </div>
 
-            <div className="border-t border-white/10 pt-12">
-                <h2 className={cn("text-3xl font-bold text-center capitalize transition-colors duration-500", textColor)}>
-                    {selectedCategory === 'All' ? "Featured Products" : `${selectedCategory}`}
-                </h2>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-                {loading
-                    ? Array.from({ length: 10 }).map((_, i) => <ProductCardSkeleton key={i} />)
-                    : products.map((product, index) => (
-                        <div ref={products.length === index + 1 ? lastProductElementRef : null} key={product.id} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
-                            <ProductCard product={product} />
-                        </div>
-                    ))
-                }
-            </div>
-            {loadingMore && <Spinner />}
-            {!loading && products.length === 0 && (
-                <div className="col-span-full text-center py-16 flex flex-col items-center">
-                    <PackageSearch size={64} className={cn("transition-colors duration-500", selectedCategory !== 'All' ? 'text-white/50' : 'text-gray-300')} />
-                    <h3 className={cn("text-2xl font-bold mt-4 transition-colors duration-500", textColor)}>No Products Found</h3>
-                    <p className={cn("mt-2 transition-colors duration-500", selectedCategory !== 'All' ? 'text-white/70' : 'text-gray-500')}>Try adjusting your category or search.</p>
+            <div className={cn(
+                'overflow-hidden transition-all duration-500 ease-in-out',
+                isSearchFocused ? 'max-h-0 opacity-0' : 'max-h-96 opacity-100'
+            )}>
+                <div className="mb-6">
+                    <BannerSlider banners={banners} />
                 </div>
-            )}
+            </div>
+
+            <div>
+                {/* <div className="flex items-center justify-between mb-4">
+                    <h2 className={cn("text-2xl font-bold capitalize", textColor)}>
+                        {searchQuery ? `Results for "${searchQuery}"` : (selectedCategory === 'All' ? "All Products" : selectedCategory)}
+                    </h2>
+                </div> */}
+
+                <div className="grid grid-cols-5 gap-x-2 gap-y-4 mb-8">
+                    {categories.map((cat) => (
+                        <CategoryItem key={cat.name} name={cat.name} Icon={cat.icon} isSelected={selectedCategory === cat.name} />
+                    ))}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+                    {loading
+                        ? Array.from({ length: 10 }).map((_, i) => <ProductCardSkeleton key={i} />)
+                        : (
+                            <>
+                                {/* Conditionally render the new card here */}
+                                {showUploadCard && (
+                                    <div className="opacity-0 animate-fade-in-up">
+                                        <UploadPrescriptionCard />
+                                    </div>
+                                )}
+                                {products.map((product, index) => (
+                                    <div ref={products.length === index + 1 ? lastProductElementRef : null} key={product.id} className="opacity-0 animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
+                                        <ProductCard product={product} />
+                                    </div>
+                                ))}
+                            </>
+                        )
+                    }
+                </div>
+                {loadingMore && <Spinner />}
+                {!loading && products.length === 0 && (
+                    <div className="col-span-full text-center py-16 flex flex-col items-center">
+                        <PackageSearch size={64} className={cn(selectedCategory !== 'All' ? 'text-white/50' : 'text-gray-300')} />
+                        <h3 className={cn("text-2xl font-bold mt-4", textColor)}>No Products Found</h3>
+                        <p className={cn("mt-2", selectedCategory !== 'All' ? 'text-white/70' : 'text-gray-500')}>Try adjusting your category or search.</p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

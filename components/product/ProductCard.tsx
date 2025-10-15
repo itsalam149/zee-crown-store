@@ -12,7 +12,7 @@ export default function ProductCard({ product }: { product: Product }) {
         <Link
             href={`/product/${product.id}`}
             scroll={false}
-            className="group block rounded-xl overflow-hidden bg-white shadow-subtle transition-shadow duration-300 ease-out-expo hover:shadow-medium"
+            className="group block rounded-xl overflow-hidden bg-white shadow-subtle transition-all duration-300 ease-out-expo hover:shadow-medium hover:-translate-y-1"
         >
             <div className="relative w-full aspect-square overflow-hidden">
                 {discount > 0 && (
@@ -24,7 +24,7 @@ export default function ProductCard({ product }: { product: Product }) {
                     src={product.image_url}
                     alt={product.name}
                     fill
-                    sizes="(max-width: 640px) 50vw, 33vw"
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
                     style={{ objectFit: 'cover' }}
                     className="transition-transform duration-500 ease-out-expo group-hover:scale-105"
                 />
@@ -38,7 +38,6 @@ export default function ProductCard({ product }: { product: Product }) {
                             <span className="text-xs text-gray-400 line-through ml-1.5">₹{product.mrp}</span>
                         )}
                     </div>
-                    {/* On desktop, the icon will appear on hover. On mobile, it's always visible. */}
                     <div className="bg-lighter-gray p-1.5 rounded-full text-dark-gray transition-all duration-300 md:opacity-0 md:group-hover:opacity-100 md:group-hover:bg-primary md:group-hover:text-white">
                         <Plus size={16} />
                     </div>

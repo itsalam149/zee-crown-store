@@ -14,6 +14,6 @@ export default async function ProductPage({ params }: { params: { slug: string }
     if (!product) {
         notFound();
     }
+    <ProductDetailClient product={product} closeModal={() => { }} />;
 
-    return <ProductDetailClient product={product} />;
 }

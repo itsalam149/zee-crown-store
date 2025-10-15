@@ -10,85 +10,154 @@ import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 import { Minus, Plus, ShoppingCart, Zap } from 'lucide-react';
 
-export default function ProductDetailModal({ product, closeModal }: { product: Product, closeModal: () => void }) {
-    // ... All logic (handleAddToCart, handleBuyNow, etc.) remains the same
+export default function ProductDetailModal({
+    product,
+    closeModal,
+}: {
+    product: Product;
+    closeModal: () => void;
+}) {
     const router = useRouter();
     const supabase = createClient();
     const { session } = useAuthStore();
+
     const [quantity, setQuantity] = useState(1);
     const [isAdding, setIsAdding] = useState(false);
     const [isBuying, setIsBuying] = useState(false);
 
-    const discount = product.mrp && product.mrp > product.price ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
+    const discount =
+        product.mrp && product.mrp > product.price
+            ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
+            : 0;
 
     const addToCart = async () => {
-        if (!session) { toast.error('Please login to continue.'); closeModal(); router.push('/login'); return { success: false }; }
-        const { error } = await supabase.from('cart_items').insert({ product_id: product.id, quantity: quantity, user_id: session.user.id, });
-        if (error) { toast.error('Error: ' + error.message); return { success: false }; }
+        if (!session) {
+            toast.error('Please login to continue.');
+            closeModal();
+            router.push('/login');
+            return { success: false };
+        }
+
+        const { error } = await supabase.from('cart_items').insert({
+            product_id: product.id,
+            quantity,
+            user_id: session.user.id,
+        });
+
+        if (error) {
+            toast.error(`Error: ${error.message}`);
+            return { success: false };
+        }
+
         router.refresh();
         return { success: true };
     };
+
     const handleAddToCart = async () => {
         setIsAdding(true);
         const toastId = toast.loading('Adding to cart...');
         const { success } = await addToCart();
         toast.dismiss(toastId);
-        if (success) toast.success(`${quantity} of ${product.name} added to cart!`);
+        if (success) toast.success(`${quantity} × ${product.name} added to cart!`);
         setIsAdding(false);
     };
+
     const handleBuyNow = async () => {
         setIsBuying(true);
         const toastId = toast.loading('Preparing your order...');
         const { success } = await addToCart();
         toast.dismiss(toastId);
-        if (success) { closeModal(); router.push('/checkout'); }
+        if (success) {
+            closeModal();
+            router.push('/checkout');
+        }
         setIsBuying(false);
     };
 
-    // This layout is now designed to fit perfectly inside the new mobile-first modal
     return (
-        <div className="flex flex-col max-h-[85vh]">
-            {/* On mobile, this header is part of the scroll. On desktop, it's fixed. */}
-            <div className="relative w-full aspect-square md:aspect-auto md:h-72 flex-shrink-0">
-                <Image src={product.image_url} alt={product.name} fill style={{ objectFit: 'cover' }} className="md:rounded-t-xl" priority />
+        <div className="flex flex-col max-h-[85vh] overflow-hidden rounded-t-2xl bg-white">
+            {/* Product Image */}
+            <div className="relative w-full aspect-square md:aspect-video">
+                <Image
+                    src={product.image_url}
+                    alt={product.name}
+                    fill
+                    className="object-cover rounded-t-2xl"
+                    priority
+                />
             </div>
 
-            {/* This container handles scrolling for all content below the image */}
+            {/* Product Info */}
             <div className="flex flex-col flex-grow p-6 overflow-y-auto">
-                <div className="flex-shrink-0">
-                    <p className="text-sm font-semibold text-primary uppercase tracking-wider">{product.category}</p>
-                    <h1 className="text-2xl lg:text-3xl font-bold text-dark-gray tracking-tight mt-1">{product.name}</h1>
+                {/* Title & Price */}
+                <div>
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wider">
+                        {product.category}
+                    </p>
+                    <h1 className="text-2xl font-bold text-dark-gray tracking-tight mt-1">
+                        {product.name}
+                    </h1>
+
                     <div className="flex items-baseline gap-3 mt-3">
                         <p className="text-2xl font-bold text-primary">₹{product.price}</p>
-                        {product.mrp && product.mrp > product.price && <p className="text-lg text-gray-400 line-through">₹{product.mrp}</p>}
-                        {discount > 0 && <div className="text-xs font-bold bg-red-100 text-red px-2 py-1 rounded-md">{discount}% OFF</div>}
+                        {product.mrp && product.mrp > product.price && (
+                            <p className="text-gray-400 line-through">₹{product.mrp}</p>
+                        )}
+                        {discount > 0 && (
+                            <div className="text-xs font-bold bg-red-100 text-red-600 px-2 py-1 rounded-md">
+                                {discount}% OFF
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                <div className="my-4 border-t border-lighter-gray"></div>
+                {/* Divider */}
+                <hr className="my-4 border-lighter-gray" />
 
-                <div className="text-gray leading-relaxed text-sm">
-                    <h3 className="font-bold text-dark-gray mb-2">Description</h3>
-                    <p>{product.description}</p>
+                {/* Description */}
+                <div className="text-gray-600 leading-relaxed text-sm">
+                    <h3 className="font-bold text-dark-gray mb-2 text-base">Description</h3>
+                    <p>{product.description || 'No description available.'}</p>
                 </div>
             </div>
 
-            {/* This is the "sticky footer" for actions, always visible at the bottom */}
+            {/* Bottom Action Bar */}
             <div className="flex-shrink-0 p-6 border-t border-lighter-gray bg-white">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-4">
                     <p className="text-base font-semibold text-dark-gray">Quantity:</p>
-                    <div className="flex items-center gap-1 bg-grayBG rounded-full">
-                        <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-2.5 text-gray hover:text-primary transition-colors rounded-full"><Minus size={16} /></button>
+                    <div className="flex items-center gap-2 bg-gray-100 rounded-full">
+                        <button
+                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                            className="p-2 text-gray-600 hover:text-primary transition-colors rounded-full"
+                            aria-label="Decrease quantity"
+                        >
+                            <Minus size={16} />
+                        </button>
                         <p className="text-base font-bold w-8 text-center">{quantity}</p>
-                        <button onClick={() => setQuantity(quantity + 1)} className="p-2.5 text-gray hover:text-primary transition-colors rounded-full"><Plus size={16} /></button>
+                        <button
+                            onClick={() => setQuantity(quantity + 1)}
+                            className="p-2 text-gray-600 hover:text-primary transition-colors rounded-full"
+                            aria-label="Increase quantity"
+                        >
+                            <Plus size={16} />
+                        </button>
                     </div>
                 </div>
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                    <Button onClick={handleAddToCart} disabled={isAdding || isBuying} className="flex items-center justify-center gap-2 bg-lightPrimary text-primary hover:bg-light">
+
+                <div className="grid grid-cols-2 gap-3">
+                    <Button
+                        onClick={handleAddToCart}
+                        disabled={isAdding || isBuying}
+                        className="flex items-center justify-center gap-2 bg-primary/10 text-primary hover:bg-primary/20"
+                    >
                         <ShoppingCart size={18} />
                         {isAdding ? 'Adding...' : 'Add to Cart'}
                     </Button>
-                    <Button onClick={handleBuyNow} disabled={isAdding || isBuying} className="flex items-center justify-center gap-2">
+                    <Button
+                        onClick={handleBuyNow}
+                        disabled={isAdding || isBuying}
+                        className="flex items-center justify-center gap-2"
+                    >
                         <Zap size={18} />
                         {isBuying ? 'Redirecting...' : 'Buy Now'}
                     </Button>

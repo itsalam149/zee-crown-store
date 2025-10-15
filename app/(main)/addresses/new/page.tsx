@@ -1,3 +1,5 @@
+'use client';
+
 import AddressForm from "@/components/profile/AddressForm";
 import BackButton from "@/components/ui/BackButton";
 

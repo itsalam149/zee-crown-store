@@ -24,15 +24,13 @@ export default function AddressesPage() {
         }
 
         const fetchAddresses = async () => {
-            const { data, error } = await supabase
+            const { data } = await supabase
                 .from('addresses')
                 .select('*')
                 .eq('user_id', session.user.id)
                 .order('is_default', { ascending: false });
 
-            if (data) {
-                setAddresses(data);
-            }
+            if (data) setAddresses(data);
             setLoading(false);
         };
 

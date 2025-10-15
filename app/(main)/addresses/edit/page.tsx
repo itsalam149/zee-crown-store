@@ -13,15 +13,13 @@ export default function EditAddressPage({ params }: { params: { addressId: strin
 
     useEffect(() => {
         const fetchAddress = async () => {
-            const { data, error } = await supabase
+            const { data } = await supabase
                 .from('addresses')
                 .select('*')
                 .eq('id', params.addressId)
                 .single();
 
-            if (data) {
-                setAddress(data);
-            }
+            if (data) setAddress(data);
             setLoading(false);
         };
         fetchAddress();

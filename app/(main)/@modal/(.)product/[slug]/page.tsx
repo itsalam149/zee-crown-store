@@ -34,6 +34,7 @@ export default function ProductModal({ params }: { params: { slug: string } }) {
             document.body.style.overflow = 'auto';
             window.removeEventListener('keydown', handleKeyDown);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleClose = () => {
@@ -46,17 +47,14 @@ export default function ProductModal({ params }: { params: { slug: string } }) {
     };
 
     return (
-        // On mobile, this will cover the screen. On desktop (`md:`), it will center the content.
         <div
             ref={dialogRef}
             onClick={onBackdropClick}
             className={`fixed inset-0 z-50 flex items-end md:items-center justify-center transition-colors duration-300 ease-in-out ${show ? 'bg-black/50' : 'bg-transparent'}`}
         >
-            {/* This is the sliding panel for mobile, which becomes the modal on desktop */}
             <div
                 className={`relative bg-white w-full rounded-t-2xl md:rounded-xl shadow-lifted max-w-4xl transition-transform duration-300 ease-out-expo ${show ? 'translate-y-0' : 'translate-y-full md:translate-y-10'}`}
             >
-                {/* On mobile, a grab handle is shown. On desktop, an 'X' button. */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-6 p-2 md:hidden">
                     <div className="w-12 h-1.5 bg-white/70 rounded-full" />
                 </div>
@@ -67,7 +65,6 @@ export default function ProductModal({ params }: { params: { slug: string } }) {
                     <X size={20} />
                 </button>
 
-                {/* Content Area */}
                 {product ? (
                     <ProductDetailModal product={product} closeModal={handleClose} />
                 ) : (
