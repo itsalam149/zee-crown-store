@@ -4,6 +4,13 @@ import Image from "next/image";
 import BackButton from "../ui/BackButton";
 
 export default function OrderDetailView({ order }: { order: Order }) {
+
+    // Helper to format the address object
+    const formatAddress = (addr: any) => {
+        if (!addr) return "No address provided.";
+        return `${addr.house_no || ''}, ${addr.street_address}, ${addr.city}, ${addr.state} - ${addr.postal_code}`;
+    };
+
     return (
         <div className="space-y-6 max-w-4xl mx-auto">
             <BackButton />
@@ -13,7 +20,11 @@ export default function OrderDetailView({ order }: { order: Order }) {
                 <p><strong>Date:</strong> {new Date(order.created_at).toLocaleString()}</p>
                 <p><strong>Status:</strong> <span className="capitalize font-semibold">{order.status}</span></p>
                 <p><strong>Total:</strong> <span className="font-bold text-primary">₹{order.total_price.toFixed(2)}</span></p>
-                <p className="mt-4"><strong>Shipping Address:</strong><br />{order.shipping_address}</p>
+                <div className="mt-4">
+                    <strong>Shipping Address:</strong>
+                    <p className="text-gray-600">{formatAddress(order.shipping_address)}</p>
+                    {order.shipping_address?.mobile_number && <p className="text-gray-600">Phone: {order.shipping_address.mobile_number}</p>}
+                </div>
             </div>
             <h2 className="text-2xl font-bold">Items</h2>
             <div className="space-y-4">

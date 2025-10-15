@@ -58,8 +58,19 @@ export default function ProductDetailModal({
         const toastId = toast.loading('Adding to cart...');
         const { success } = await addToCart();
         toast.dismiss(toastId);
-        if (success) toast.success(`${quantity} × ${product.name} added to cart!`);
-        setIsAdding(false);
+
+        if (success) {
+            toast.success(`${quantity} × ${product.name} added to cart!`);
+
+            // FIX: Navigate to the home page after 2 seconds
+            setTimeout(() => {
+                router.push('/'); // This will close the modal and go to the home page.
+            }, 2000);
+
+        } else {
+            // Only re-enable the button if the process failed
+            setIsAdding(false);
+        }
     };
 
     const handleBuyNow = async () => {
