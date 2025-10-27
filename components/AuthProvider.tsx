@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase-client';
 import { useAuthStore } from '@/store/authStore';
+import { User } from '@supabase/supabase-js';
 
 // This component runs on the client and sets the session in our store
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -29,4 +30,57 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }, [supabase, setSession]);
 
     return <>{children}</>;
+}
+
+// Custom hook for authentication
+export function useAuth() {
+    const { session } = useAuthStore();
+    const [profile, setProfile] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const supabase = createClient();
+
+    useEffect(() => {
+        if (session?.user) {
+            // Fetch user profile
+            const fetchProfile = async () => {
+                try {
+                    const { data, error } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', session.user.id)
+                        .single();
+
+                    if (error) {
+                        console.error('Error fetching profile:', error);
+                    } else {
+                        setProfile(data);
+                    }
+                } catch (error) {
+                    console.error('Error fetching profile:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            fetchProfile();
+        } else {
+            setProfile(null);
+            setLoading(false);
+        }
+    }, [session, supabase]);
+
+    const signOut = async () => {
+        try {
+            await supabase.auth.signOut();
+        } catch (error) {
+            console.error('Error signing out:', error);
+        }
+    };
+
+    return {
+        user: session?.user || null,
+        profile,
+        signOut,
+        loading
+    };
 }

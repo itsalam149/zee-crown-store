@@ -1,47 +1,79 @@
 'use client';
-import { Search } from 'lucide-react';
-import { useRouter, usePathname } from 'next/navigation';
-import { useTransition } from 'react';
+
+import { useState, useRef, useEffect } from 'react';
+import { Search, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 interface SearchBarProps {
-    initialQuery?: string;
-    onFocus?: () => void;
-    onBlur?: () => void;
+    onSearch?: () => void;
+    autoFocus?: boolean;
+    className?: string;
+    placeholder?: string;
 }
 
-export function SearchBar({ initialQuery, onFocus, onBlur }: SearchBarProps) {
+export default function SearchBar({ 
+    onSearch, 
+    autoFocus = false, 
+    className,
+    placeholder = "Search products..."
+}: SearchBarProps) {
+    const [query, setQuery] = useState('');
+    const [isFocused, setIsFocused] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
-    const pathname = usePathname();
-    const [isPending, startTransition] = useTransition();
 
-    const handleSearch = (term: string) => {
-        const params = new URLSearchParams(window.location.search);
-        if (term) {
-            params.set('q', term);
-        } else {
-            params.delete('q');
+    useEffect(() => {
+        if (autoFocus && inputRef.current) {
+            inputRef.current.focus();
         }
+    }, [autoFocus]);
 
-        // When searching, reset category to 'All'
-        params.delete('category');
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (query.trim()) {
+            router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+            onSearch?.();
+        }
+    };
 
-        startTransition(() => {
-            router.replace(`${pathname}?${params.toString()}`);
-        });
+    const handleClear = () => {
+        setQuery('');
+        inputRef.current?.focus();
     };
 
     return (
-        <div className="relative w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 z-10" />
-            <input
-                type="text"
-                placeholder="Search products..."
-                defaultValue={initialQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                onFocus={onFocus}
-                onBlur={onBlur}
-                className="w-full pl-12 pr-4 py-3 border-none bg-white/70 rounded-full focus:ring-2 focus:ring-primary focus:outline-none focus:bg-white transition-all"
-            />
-        </div>
+        <form onSubmit={handleSubmit} className={cn("relative w-full", className)}>
+            <div className={cn(
+                "relative flex items-center transition-all duration-200",
+                isFocused ? "ring-2 ring-primary ring-opacity-50" : ""
+            )}>
+                <Search className="absolute left-3 h-4 w-4 text-gray-400" />
+                <input
+                    ref={inputRef}
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    placeholder={placeholder}
+                    className={cn(
+                        "w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg",
+                        "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
+                        "bg-white text-gray-900 placeholder-gray-500",
+                        "transition-all duration-200"
+                    )}
+                />
+                {query && (
+                    <button
+                        type="button"
+                        onClick={handleClear}
+                        className="absolute right-3 h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                )}
+            </div>
+        </form>
     );
 }

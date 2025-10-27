@@ -137,7 +137,7 @@ export default function CartPage() {
             console.error('Error fetching cart items:', error);
             toast.error('Could not fetch your cart.');
         } else {
-            setCartItems(data as CartItem[] || []);
+            setCartItems((data || []) as unknown as CartItem[]);
         }
         setLoading(false);
     }, [session, supabase]);
@@ -146,10 +146,8 @@ export default function CartPage() {
     useEffect(() => {
         if (session) {
             fetchCartItems();
-        } else if (useAuthStore.getState().isRestored) {
-            router.push('/login');
         }
-    }, [session, fetchCartItems, router]);
+    }, [session, fetchCartItems]);
 
     // Calculate subtotal
     const subtotal = useMemo(() =>

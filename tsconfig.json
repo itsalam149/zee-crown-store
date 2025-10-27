@@ -21,6 +21,7 @@
         "name": "next"
       }
     ],
+    "baseUrl": ".", // <-- ADDED THIS LINE
     "paths": {
       "@/*": [
         "./*"

@@ -74,10 +74,8 @@ export default function CheckoutPage() {
     useEffect(() => {
         if (session) {
             fetchData();
-        } else if (useAuthStore.getState().isRestored) {
-            router.push('/login');
         }
-    }, [session, router, fetchData]);
+    }, [session, fetchData]);
 
     // Calculate totals
     const subtotal = useMemo(() => cartItems.reduce((sum, item) => sum + (item.products.price * item.quantity), 0), [cartItems]);

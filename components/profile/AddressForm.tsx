@@ -10,9 +10,10 @@ import toast from "react-hot-toast";
 
 interface AddressFormProps {
     address?: Address;
+    onSave?: () => void;
 }
 
-export default function AddressForm({ address }: AddressFormProps) {
+export default function AddressForm({ address, onSave }: AddressFormProps) {
     const router = useRouter();
     const supabase = createClient();
     const { session } = useAuthStore();
@@ -66,6 +67,7 @@ export default function AddressForm({ address }: AddressFormProps) {
             if (error) throw error;
 
             toast.success("Address saved successfully!");
+            onSave?.();
             router.push("/my-addresses");
         } catch (error: any) {
             console.error(error);
