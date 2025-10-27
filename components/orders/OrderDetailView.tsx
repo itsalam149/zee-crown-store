@@ -1,3 +1,4 @@
+// components/orders/OrderDetailView.tsx
 'use client'
 
 import { Order } from "@/lib/types";
@@ -8,7 +9,9 @@ import { cn } from "@/lib/utils";
 
 // Helper to format the address object
 const formatAddress = (addr: any) => {
-    if (typeof addr === 'string') return addr; // Fallback for old data
+    // Fallback for old data or if addr is just a string/UUID
+    if (typeof addr === 'string') return addr;
+    // Handle if the join returns null (e.g., address was deleted)
     if (!addr) return "No address provided.";
 
     const parts = [
@@ -82,6 +85,7 @@ export default function OrderDetailView({ order }: { order: Order }) {
                         Shipping Address
                     </h2>
                     <div className="space-y-1 text-gray-600">
+                        {/* This now safely accesses the joined address object */}
                         <p className="font-semibold text-dark-gray">{order.shipping_address?.full_name ?? 'No name provided'}</p>
                         <p>{formatAddress(order.shipping_address)}</p>
                         {order.shipping_address?.mobile_number && <p>Phone: {order.shipping_address.mobile_number}</p>}

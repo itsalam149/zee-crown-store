@@ -66,8 +66,10 @@ export interface Address {
     country: string;
     is_default: boolean;
     house_no?: string;
-    mobile_number?: string;
+    mobile_number?: string; // This field EXISTS in the schema
     landmark?: string;
+    created_at?: string;
+    updated_at?: string;
 }
 
 // Represents a user's profile information.

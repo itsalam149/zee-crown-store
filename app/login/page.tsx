@@ -1,3 +1,4 @@
+// app/login/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -21,14 +22,25 @@ export default function LoginPage() {
         setLoading(true);
         const toastId = toast.loading('Signing in...');
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        setLoading(false);
+
         toast.dismiss(toastId);
+
         if (error) {
-            toast.error(error.message);
+            if (error.message.includes('Email not confirmed')) {
+                toast.error('Email not verified. Please check your inbox for an OTP.');
+                // Redirect to OTP page so they can verify
+                router.push(`/verify-otp?email=${encodeURIComponent(email)}&otpType=signup`);
+            } else if (error.message.includes('Invalid login credentials')) {
+                toast.error('Invalid email or password.');
+            } else {
+                toast.error(error.message);
+            }
+            setLoading(false);
         } else {
             toast.success('Signed in successfully!');
             router.push('/');
             router.refresh();
+            // No need to set loading false, we are redirecting
         }
     };
 
@@ -49,6 +61,16 @@ export default function LoginPage() {
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="block w-full pl-10 pr-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" placeholder="Password" required />
                     </div>
+
+                    {/* Forgot Password Link */}
+                    <div className="text-right text-sm">
+                        <Link href="/forgot-password"
+                            className="font-semibold text-primary hover:underline"
+                        >
+                            Forgot Password?
+                        </Link>
+                    </div>
+
                     <Button type="submit" disabled={loading}>
                         {loading ? 'Signing in...' : 'Sign In'}
                     </Button>

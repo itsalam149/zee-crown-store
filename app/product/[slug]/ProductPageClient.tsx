@@ -1,3 +1,4 @@
+// app/product/[slug]/ProductPageClient.tsx
 'use client';
 
 import { Product } from '@/lib/types';
@@ -5,29 +6,32 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Button from '@/components/ui/Button';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase-client';
+// No Supabase client needed here anymore for handleBuyNow's core logic
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
-import { Minus, Plus, ShoppingCart, Zap, ChevronRight, CheckCircle } from 'lucide-react';
+import { Minus, Plus, ShoppingCart, Zap, CheckCircle } from 'lucide-react';
 import BackButton from '@/components/ui/BackButton';
+// Import Supabase client ONLY if still needed for handleAddToCart
+import { createClient } from '@/lib/supabase-client';
 
 export default function ProductPageClient({ product }: { product: Product }) {
     const router = useRouter();
-    const supabase = createClient();
+    const supabase = createClient(); // Keep if handleAddToCart is used
     const { session } = useAuthStore();
 
     const [quantity, setQuantity] = useState(1);
-    const [isAdding, setIsAdding] = useState(false);
-    const [isBuying, setIsBuying] = useState(false);
+    const [isAdding, setIsAdding] = useState(false); // For Add to Cart button
+    const [isBuying, setIsBuying] = useState(false); // For Buy Now button
     const [addedToCart, setAddedToCart] = useState(false);
 
     const discount = product.mrp && product.mrp > product.price
         ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
         : 0;
 
-    const handleAction = async () => {
+    // --- handleAction for Add to Cart (Keep as is or simplify if only Buy Now exists) ---
+    const handleAddToCartAction = async () => {
+        // This function adds the item to the persistent cart_items table
         if (!session) {
-            toast.error('Please login to continue.');
             router.push('/login');
             return { success: false };
         }
@@ -39,7 +43,7 @@ export default function ProductPageClient({ product }: { product: Product }) {
             .eq('product_id', product.id)
             .single();
 
-        if (fetchError && fetchError.code !== 'PGRST116') { // Ignore "no rows found" error
+        if (fetchError && fetchError.code !== 'PGRST116') {
             toast.error(fetchError.message);
             return { success: false };
         }
@@ -50,49 +54,75 @@ export default function ProductPageClient({ product }: { product: Product }) {
                 .from('cart_items')
                 .update({ quantity: newQuantity })
                 .eq('id', existingItem.id);
-
-            if (error) {
-                toast.error(`Error: ${error.message}`);
-                return { success: false };
-            }
+            if (error) { toast.error(`Error: ${error.message}`); return { success: false }; }
         } else {
             const { error } = await supabase.from('cart_items').insert({
                 product_id: product.id,
                 quantity,
                 user_id: session.user.id,
             });
-
-            if (error) {
-                toast.error(`Error: ${error.message}`);
-                return { success: false };
-            }
+            if (error) { toast.error(`Error: ${error.message}`); return { success: false }; }
         }
 
-        router.refresh(); // Refreshes server components to update cart icon
+        router.refresh();
         return { success: true };
     };
 
     const handleAddToCart = async () => {
         setIsAdding(true);
-        const { success } = await handleAction();
+        const { success } = await handleAddToCartAction();
         if (success) {
             toast.success(`${quantity} × ${product.name} added to cart!`);
-            setAddedToCart(true); // Show confirmation on the button
-            setTimeout(() => setAddedToCart(false), 3000); // Reset after 3 seconds
+            setAddedToCart(true);
+            setTimeout(() => setAddedToCart(false), 3000);
         }
-        setIsAdding(false);
-    };
-
-    const handleBuyNow = async () => {
-        setIsBuying(true);
-        const { success } = await handleAction();
-        if (success) {
-            router.push('/checkout');
-        } else {
-            setIsBuying(false);
+        if (session) {
+            setIsAdding(false);
         }
     };
+    // --- End Add to Cart Logic ---
 
+    // --- UPDATED handleBuyNow ---
+    const handleBuyNow = () => {
+        if (!session) {
+            // Redirect to login, potentially passing the intended action
+            // You could add query params like ?redirect=/product/slug&action=buyNow
+            router.push('/login');
+            return;
+        }
+
+        setIsBuying(true); // Show loading state on button
+
+        // 1. Prepare the item data
+        const buyNowItem = {
+            product_id: product.id,
+            quantity: quantity,
+            // Include necessary product details directly
+            products: {
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                image_url: product.image_url,
+                // Add any other fields needed by checkout/order creation
+                mrp: product.mrp
+            }
+        };
+
+        // 2. Store it temporarily (SessionStorage is cleared when browser tab closes)
+        try {
+            sessionStorage.setItem('buyNowItem', JSON.stringify(buyNowItem));
+            // 3. Redirect to checkout with a flag
+            router.push('/checkout?buyNow=true');
+        } catch (error) {
+            console.error("Error storing buy now item:", error);
+            toast.error("Could not proceed to checkout. Please try again.");
+            setIsBuying(false); // Reset loading state on error
+        }
+        // No need to set isBuying false on success, navigation handles it
+    };
+    // ----------------------------
+
+    // --- Component JSX (Keep the structure, update button text/state) ---
     return (
         <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 lg:p-8">
             <BackButton />
@@ -160,11 +190,12 @@ export default function ProductPageClient({ product }: { product: Product }) {
                             </Button>
                             <Button
                                 onClick={handleBuyNow}
-                                disabled={isAdding || isBuying}
+                                disabled={isAdding || isBuying} // Disable while adding to cart too
                                 className="flex items-center justify-center gap-2"
                             >
                                 <Zap size={20} />
-                                {isBuying ? 'Processing...' : 'Buy Now'}
+                                {/* Update button text based on isBuying state */}
+                                {isBuying ? 'Proceeding...' : 'Buy Now'}
                             </Button>
                         </div>
                     </div>
