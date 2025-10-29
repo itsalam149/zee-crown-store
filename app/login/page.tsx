@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase-client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
@@ -13,6 +13,7 @@ import Image from 'next/image';
 export default function LoginPage() {
     const supabase = createClient();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -38,7 +39,8 @@ export default function LoginPage() {
             setLoading(false);
         } else {
             toast.success('Signed in successfully!');
-            router.push('/');
+            const redirect = searchParams.get('redirect');
+            router.push(redirect || '/');
             router.refresh();
             // No need to set loading false, we are redirecting
         }

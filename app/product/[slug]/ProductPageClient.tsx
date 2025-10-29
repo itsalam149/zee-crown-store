@@ -83,17 +83,8 @@ export default function ProductPageClient({ product }: { product: Product }) {
     // --- End Add to Cart Logic ---
 
     // --- UPDATED handleBuyNow ---
-    const handleBuyNow = () => {
-        if (!session) {
-            // Redirect to login, potentially passing the intended action
-            // You could add query params like ?redirect=/product/slug&action=buyNow
-            router.push('/login');
-            return;
-        }
-
-        setIsBuying(true); // Show loading state on button
-
-        // 1. Prepare the item data
+    const handleBuyNow = async () => {
+        // Prepare the item data first so we can persist it even if the user is not logged in
         const buyNowItem = {
             product_id: product.id,
             quantity: quantity,
@@ -108,15 +99,48 @@ export default function ProductPageClient({ product }: { product: Product }) {
             }
         };
 
-        // 2. Store it temporarily (SessionStorage is cleared when browser tab closes)
+        // Persist immediately so we don't lose context when navigating to login
         try {
             sessionStorage.setItem('buyNowItem', JSON.stringify(buyNowItem));
-            // 3. Redirect to checkout with a flag
-            router.push('/checkout?buyNow=true');
-        } catch (error) {
-            console.error("Error storing buy now item:", error);
-            toast.error("Could not proceed to checkout. Please try again.");
-            setIsBuying(false); // Reset loading state on error
+        } catch (e) {
+            // If storage fails, we still fall back to the old flow
+            console.error('Failed to store Buy Now item:', e);
+        }
+
+        if (!session) {
+            // Redirect to login with a redirect back to checkout in Buy Now mode
+            router.push('/login?redirect=' + encodeURIComponent('/checkout?buyNow=true'));
+            return;
+        }
+
+        setIsBuying(true); // Show loading state on button
+
+        // Navigate to checkout with the item stored in sessionStorage
+        try {
+            const buyNowItem = {
+                product_id: product.id,
+                quantity,
+                products: {
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    image_url: product.image_url,
+                    mrp: product.mrp,
+                },
+            };
+            try { localStorage.setItem('buyNowItem', JSON.stringify(buyNowItem)); } catch {}
+            sessionStorage.setItem('buyNowItem', JSON.stringify(buyNowItem));
+            router.push(`/checkout?buyNow=true&pid=${encodeURIComponent(product.id)}&qty=${quantity}`);
+            // Hard fallback in case router fails due to any edge condition
+            setTimeout(() => {
+                if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/checkout')) {
+                    window.location.href = `/checkout?buyNow=true&pid=${encodeURIComponent(product.id)}&qty=${quantity}`;
+                }
+            }, 150);
+        } catch (error: any) {
+            console.error('Error preparing Buy Now:', error);
+            toast.error(error.message || 'Could not proceed to checkout. Please try again.');
+            setIsBuying(false);
         }
         // No need to set isBuying false on success, navigation handles it
     };

@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase-client';
+import { useSupabase } from '@/components/SupabaseProvider';
 import { useAuthStore } from '@/store/authStore';
 import { User } from '@supabase/supabase-js';
 
 // This component runs on the client and sets the session in our store
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-    const supabase = createClient();
+    const supabase = useSupabase();
     const { setSession } = useAuthStore();
 
     useEffect(() => {
@@ -37,7 +37,7 @@ export function useAuth() {
     const { session } = useAuthStore();
     const [profile, setProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const supabase = createClient();
+    const supabase = useSupabase();
 
     useEffect(() => {
         if (session?.user) {

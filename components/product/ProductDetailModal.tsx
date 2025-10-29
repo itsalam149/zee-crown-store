@@ -101,16 +101,8 @@ export default function ProductDetailModal({
 
 
     // --- UPDATED handleBuyNow ---
-    const handleBuyNow = () => {
-        if (!session) {
-            closeModal(); // Close modal first
-            router.push('/login');
-            return;
-        }
-
-        setIsBuying(true);
-
-        // 1. Prepare the item data
+    const handleBuyNow = async () => {
+        // Prepare the item data first
         const buyNowItem = {
             product_id: product.id,
             quantity: quantity,
@@ -123,19 +115,50 @@ export default function ProductDetailModal({
             }
         };
 
-        // 2. Store it temporarily
+        // Persist immediately so the context survives a login redirect
         try {
             sessionStorage.setItem('buyNowItem', JSON.stringify(buyNowItem));
-            // 3. Close modal and redirect
+        } catch (e) {
+            console.error('Failed to store Buy Now item:', e);
+        }
+
+        if (!session) {
+            closeModal(); // Close modal first
+            router.push('/login?redirect=' + encodeURIComponent('/checkout?buyNow=true'));
+            return;
+        }
+
+        setIsBuying(true);
+
+        // Navigate to checkout with the item stored in sessionStorage
+        try {
+            const buyNowItem = {
+                product_id: product.id,
+                quantity,
+                products: {
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    image_url: product.image_url,
+                    mrp: product.mrp,
+                },
+            };
+            try { localStorage.setItem('buyNowItem', JSON.stringify(buyNowItem)); } catch {}
+            sessionStorage.setItem('buyNowItem', JSON.stringify(buyNowItem));
             closeModal();
-            // Use a small timeout to allow modal close animation to start
             setTimeout(() => {
-                router.push('/checkout?buyNow=true');
+                router.push(`/checkout?buyNow=true&pid=${encodeURIComponent(product.id)}&qty=${quantity}`);
+                // Hard fallback if router navigation is blocked
+                setTimeout(() => {
+                    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/checkout')) {
+                        window.location.href = `/checkout?buyNow=true&pid=${encodeURIComponent(product.id)}&qty=${quantity}`;
+                    }
+                }, 150);
             }, 150);
-        } catch (error) {
-            console.error("Error storing buy now item:", error);
-            toast.error("Could not proceed to checkout. Please try again.");
-            setIsBuying(false); // Reset loading state on error
+        } catch (error: any) {
+            console.error('Error preparing Buy Now:', error);
+            toast.error(error.message || 'Could not proceed to checkout. Please try again.');
+            setIsBuying(false);
         }
     };
     // ----------------------------

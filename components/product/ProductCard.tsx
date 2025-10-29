@@ -18,11 +18,11 @@ export default function ProductCard({ product }: { product: Product }) {
             <Link
                 href={`/product/${product.id}`}
                 scroll={false}
-                className="group block rounded-xl overflow-hidden bg-white shadow-subtle transition-shadow duration-300 ease-out-expo hover:shadow-medium"
+                className="group block rounded-xl overflow-hidden glass-card transition-shadow duration-300 ease-out-expo hover:shadow-medium"
             >
                 <div className="relative w-full aspect-square overflow-hidden">
                     {discount > 0 && (
-                        <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10">
+                        <div className="absolute top-2 left-2 bg-red-500/90 backdrop-blur text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10">
                             {discount}% OFF
                         </div>
                     )}
@@ -43,7 +43,7 @@ export default function ProductCard({ product }: { product: Product }) {
                                 <span className="text-xs text-gray-400 line-through ml-1.5">₹{product.mrp}</span>
                             )}
                         </div>
-                        <div className="bg-lighter-gray p-1.5 rounded-full text-dark-gray transition-all duration-300 group-hover:bg-primary group-hover:text-white group-hover:rotate-90">
+                        <div className="bg-white/70 backdrop-blur p-1.5 rounded-full text-dark-gray transition-all duration-300 group-hover:bg-primary group-hover:text-white group-hover:rotate-90">
                             <Plus size={16} />
                         </div>
                     </div>

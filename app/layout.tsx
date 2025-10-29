@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast'; // Import Toaster
 import AuthProvider from '@/components/AuthProvider';
+import SupabaseProvider from '@/components/SupabaseProvider';
 import { CartProvider } from '@/store/CartContext';
 import Script from 'next/script';
 
@@ -25,11 +26,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} font-sans`}>
-        <AuthProvider>
-          <CartProvider>
-            {children}
-          </CartProvider>
-        </AuthProvider>
+        <SupabaseProvider>
+          <AuthProvider>
+            <CartProvider>
+              {children}
+            </CartProvider>
+          </AuthProvider>
+        </SupabaseProvider>
 
         {/* Configure Toaster with default options */}
         <Toaster

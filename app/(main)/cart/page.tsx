@@ -535,15 +535,20 @@ export default function CartPage() {
 
     // Fetch cart items
     const fetchCartItems = useCallback(async () => {
-        if (!session?.user) {
-            router.push('/login');
+        let userId = session?.user?.id;
+        if (!userId) {
+            const { data: { session: liveSession } } = await supabase.auth.getSession();
+            userId = liveSession?.user?.id;
+        }
+        if (!userId) {
+            router.push('/login?redirect=' + encodeURIComponent('/cart'));
             return;
         }
         setLoading(true);
         const { data, error } = await supabase
             .from('cart_items')
             .select('id, quantity, products(*)')
-            .eq('user_id', session.user.id)
+            .eq('user_id', userId)
             .order('created_at', { ascending: true });
 
         if (error) {

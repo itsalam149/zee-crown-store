@@ -20,6 +20,7 @@ import Button from "@/components/ui/Button";
 import { useCart } from "@/store/CartContext";
 import SearchBar from "../ui/SearchBar";
 import { motion, AnimatePresence } from 'framer-motion'; // Import motion and AnimatePresence
+import CategoryBar from './CategoryBar';
 import { usePathname } from "next/navigation"; // Use usePathname hook
 
 // Define props including the lifted state and setter
@@ -222,6 +223,10 @@ const Navbar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: NavbarProps) => {
                         </AnimatePresence>
                     </Button>
                 </div>
+            </div>
+            {/* Flipkart-like category ribbon */}
+            <div className="hidden md:block">
+                <CategoryBar />
             </div>
 
             {/* Mobile Search Overlay */}

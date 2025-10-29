@@ -84,3 +84,21 @@
     @apply bg-background text-foreground;
     }
 }
+
+@layer utilities {
+  /* Subtle glassmorphism utilities */
+  .glass {
+    @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-subtle;
+  }
+  .glass-card {
+    @apply bg-white/60 dark:bg-white/5 backdrop-blur-md border border-white/30 dark:border-white/10 shadow-subtle rounded-xl;
+  }
+  .glass-panel {
+    @apply bg-white/50 dark:bg-white/10 backdrop-blur-lg border border-white/20 dark:border-white/10 shadow-lifted rounded-2xl;
+  }
+  .soft-gradient {
+    background-image: radial-gradient(1200px 600px at 0% 0%, rgba(255,255,255,0.5), transparent 60%),
+                      radial-gradient(800px 400px at 100% 0%, rgba(255,255,255,0.4), transparent 60%),
+                      linear-gradient(to bottom, var(--tw-gradient-from), var(--tw-gradient-to));
+  }
+}

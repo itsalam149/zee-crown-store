@@ -48,8 +48,15 @@ function CheckoutPageContent() {
 
     // Fetch initial data (either single Buy Now item or full cart)
     const fetchData = useCallback(async () => {
-        if (!session) {
-            router.push('/login'); // Redirect if not logged in
+        // Ensure fresh session before deciding redirects (avoids false logouts on navigation)
+        let effectiveSession = session;
+        if (!effectiveSession) {
+            const { data: { session: liveSession } } = await supabase.auth.getSession();
+            effectiveSession = liveSession || null;
+        }
+        if (!effectiveSession) {
+            const redirectUrl = isBuyNowFlow ? '/checkout?buyNow=true' : '/checkout';
+            router.push(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
             return;
         }
         setLoading(true);
@@ -61,14 +68,14 @@ function CheckoutPageContent() {
         // --- Determine items to checkout ---
         if (isBuyNowFlow) {
             try {
-                const itemString = sessionStorage.getItem('buyNowItem');
+                const itemString = sessionStorage.getItem('buyNowItem') || localStorage.getItem('buyNowItem');
                 if (itemString) {
                     const buyNowItem: BuyNowItem = JSON.parse(itemString);
                     // Convert BuyNowItem structure slightly to match CartItem for consistency
                     // Generate a temporary ID or use product_id if uniqueness isn't critical for display key
                     itemsToCheckout = [{
                         id: `buyNow-${buyNowItem.product_id}`, // Temporary ID for React key
-                        user_id: session.user.id, // Assign current user
+                        user_id: effectiveSession.user.id, // Assign current user
                         product_id: buyNowItem.product_id,
                         quantity: buyNowItem.quantity,
                         created_at: new Date().toISOString(), // Add a created_at timestamp
@@ -80,9 +87,34 @@ function CheckoutPageContent() {
                         }
                     }];
                 } else {
-                    toast.error("Buy Now item not found. Please try again.");
-                    router.push('/'); // Redirect home if buy now item is missing
-                    return;
+                    // Fallback: build from URL params
+                    const pid = searchParams.get('pid');
+                    const qty = parseInt(searchParams.get('qty') || '1', 10) || 1;
+                    if (!pid) {
+                        toast.error("Buy Now item not found. Please try again.");
+                        router.push('/');
+                        return;
+                    }
+                    const { data: product, error: pErr } = await supabase
+                        .from('products')
+                        .select('*')
+                        .eq('id', pid)
+                        .single();
+                    if (pErr || !product) {
+                        toast.error("Could not load the product.");
+                        router.push('/');
+                        return;
+                    }
+                    itemsToCheckout = [{
+                        id: `buyNow-${pid}`,
+                        user_id: effectiveSession.user.id,
+                        product_id: pid,
+                        quantity: qty,
+                        created_at: new Date().toISOString(),
+                        products: {
+                            ...product,
+                        }
+                    }];
                 }
             } catch (error) {
                 console.error("Error parsing Buy Now item:", error);
@@ -95,7 +127,7 @@ function CheckoutPageContent() {
             const { data: cartData, error: cartError } = await supabase
                 .from('cart_items')
                 .select('*, products(*)')
-                .eq('user_id', session.user.id);
+                .eq('user_id', effectiveSession.user.id);
 
             if (cartError) {
                 toast.error("Failed to load cart items.");
@@ -113,7 +145,7 @@ function CheckoutPageContent() {
         const { data: addressData, error: addressError } = await supabase
             .from('addresses')
             .select('*')
-            .eq('user_id', session.user.id)
+            .eq('user_id', effectiveSession.user.id)
             .order('is_default', { ascending: false });
 
         if (addressError) {
@@ -246,17 +278,25 @@ function CheckoutPageContent() {
                     handler: async (response: any) => {
                         // 3. On successful payment, invoke "create-order" Edge Function with payment details
                         try {
-                            // Add payment details if needed by your function
-                            // functionBody.payment_details = {
-                            //     razorpay_payment_id: response.razorpay_payment_id,
-                            //     razorpay_order_id: response.razorpay_order_id,
-                            //     razorpay_signature: response.razorpay_signature
-                            // };
-                            const { data: finalOrder, error: finalOrderError } = await supabase.functions.invoke('create-order', {
-                                body: functionBody // Pass the prepared body
+                            const selectedAddress = addresses.find(a => a.id === selectedAddressId);
+                            const responseApi = await fetch('/api/create-order', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    address: selectedAddress,
+                                    cartItems: checkoutItems,
+                                    total,
+                                    payment: {
+                                        method: 'ONLINE',
+                                        razorpay_payment_id: response.razorpay_payment_id,
+                                        razorpay_order_id: response.razorpay_order_id,
+                                        razorpay_signature: response.razorpay_signature
+                                    }
+                                })
                             });
-                            if (finalOrderError) throw new Error(`Order Creation Error: ${finalOrderError.message}`);
-                            if (!finalOrder?.order_id) throw new Error("Order ID not received after creation.");
+                            const finalOrder = await responseApi.json();
+                            if (!responseApi.ok) throw new Error(finalOrder?.error || 'Order creation failed');
+                            if (!finalOrder?.orderId) throw new Error('Order ID not received after creation.');
 
                             // Cleanup sessionStorage ONLY on successful order for Buy Now
                             if (isBuyNowFlow) {
@@ -264,7 +304,7 @@ function CheckoutPageContent() {
                             }
 
                             toast.success('Order placed successfully!');
-                            router.replace(`/my-orders/${finalOrder.order_id}`);
+                            router.replace(`/my-orders/${finalOrder.orderId}`);
 
                         } catch (finalOrderError: any) {
                             console.error("Error in handler after payment:", finalOrderError);
@@ -291,11 +331,20 @@ function CheckoutPageContent() {
                 // It should only be reset on success (handled by handler) or failure (rzp.on)
 
             } else { // COD
-                const { data: finalOrder, error: finalOrderError } = await supabase.functions.invoke('create-order', {
-                    body: functionBody // Pass the prepared body
+                const selectedAddress = addresses.find(a => a.id === selectedAddressId);
+                const responseApi = await fetch('/api/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        address: selectedAddress,
+                        cartItems: checkoutItems,
+                        total,
+                        payment: { method: 'COD' }
+                    })
                 });
-                if (finalOrderError) throw new Error(`Order Creation Error: ${finalOrderError.message}`);
-                if (!finalOrder?.order_id) throw new Error("Order ID not received after creation.");
+                const finalOrder = await responseApi.json();
+                if (!responseApi.ok) throw new Error(finalOrder?.error || 'Order creation failed');
+                if (!finalOrder?.orderId) throw new Error('Order ID not received after creation.');
 
                 // Cleanup sessionStorage ONLY on successful order for Buy Now
                 if (isBuyNowFlow) {
@@ -303,7 +352,7 @@ function CheckoutPageContent() {
                 }
 
                 toast.success('Order placed successfully!');
-                router.replace(`/my-orders/${finalOrder.order_id}`);
+                router.replace(`/my-orders/${finalOrder.orderId}`);
             }
         } catch (error: any) {
             console.error("Order confirmation error:", error);
