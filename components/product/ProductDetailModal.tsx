@@ -17,12 +17,12 @@ export default function ProductDetailModal({ product, closeModal }: { product: P
     const supabase = createClient();
     const { session } = useAuthStore();
 
-    // FIX 1: Correctly import and use addToCart from the context
+    // This is correct
     const { addToCart } = useCart();
 
     const [quantity, setQuantity] = useState(1);
     const [isAdding, setIsAdding] = useState(false);
-    const [isBuying, setIsBuying] = useState(false); // Fixed: Removed 'new'
+    const [isBuying, setIsBuying] = useState(false);
 
     const discount = product.mrp && product.mrp > product.price
         ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
@@ -46,7 +46,7 @@ export default function ProductDetailModal({ product, closeModal }: { product: P
         // After 1 second (matching your global config), dismiss toast and close modal.
         setTimeout(() => {
             toast.dismiss(toastId);
-            closeModal(); // Close the modal
+            closeModal(); // This is correct, this function calls router.back()
         }, 1000);
 
         // No need to set isAdding(false), as the component will unmount
@@ -76,18 +76,31 @@ export default function ProductDetailModal({ product, closeModal }: { product: P
             return;
         }
 
-        // 2. Check session and navigate
+        // 2. Define the URL
+        const checkoutUrl = `/checkout?buyNow=true`;
+
+        // 3. Check session and create redirect URL if needed
         if (!session) {
-            const redirectUrl = encodeURIComponent('/checkout?buyNow=true');
-            // FIX 2: REMOVED closeModal(). router.push() handles closing the modal.
+            const redirectUrl = encodeURIComponent(checkoutUrl);
+
+            // ** THE FIX **
+            // Call closeModal() to start the exit animation.
+            closeModal();
+            // This push will override the router.back() in closeModal.
             router.push(`/login?redirect=${redirectUrl}`);
             return;
         }
 
-        // FIX 2: REMOVED closeModal(). router.push() handles closing the modal.
-        router.push(`/checkout?buyNow=true`);
+        // ** THE FIX **
+        // 1. Call closeModal() FIRST. This starts the modal's exit animation
+        //    and schedules its router.back().
+        closeModal();
 
-        // The component will unmount on navigation, resetting the "Proceeding..." state.
+        // 2. Call router.push() SECOND. This *overrides* the pending
+        //    router.back() and navigates to the checkout page instead.
+        router.push(checkoutUrl);
+
+        // The component will unmount, so no need to set isBuying(false).
     };
 
     return (

@@ -18,7 +18,7 @@ export default function ProductPageClient({ product }: { product: Product }) {
     const supabase = createClient();
     const { session } = useAuthStore();
 
-    // FIX 1: Correctly import and use addToCart from the context
+    // This is correct
     const { addToCart } = useCart();
 
     const [quantity, setQuantity] = useState(1);
@@ -33,60 +33,38 @@ export default function ProductPageClient({ product }: { product: Product }) {
         setIsAdding(true);
         if (!session) {
             router.push('/login');
-            setIsAdding(false); // Stop loading on redirect
+            setIsAdding(false);
             return;
         }
 
-        // Call the context function
         await addToCart(product.id, quantity);
-
         const toastId = toast.success(`${quantity} × ${product.name} added to cart!`);
 
-        // After 1 second, dismiss toast and navigate home
         setTimeout(() => {
             toast.dismiss(toastId);
             router.push('/');
         }, 1000);
-
-        // No need to set isAdding(false) because we are navigating away
     };
 
     const handleBuyNow = async () => {
         setIsBuying(true);
 
-        // 1. Set item for checkout page
-        try {
-            const buyNowItem = {
-                product_id: product.id,
-                quantity,
-                products: {
-                    id: product.id,
-                    name: product.name,
-                    price: product.price,
-                    image_url: product.image_url,
-                    mrp: product.mrp,
-                },
-            };
-            sessionStorage.setItem('buyNowItem', JSON.stringify(buyNowItem));
-        } catch (e) {
-            console.error('Failed to store Buy Now item:', e);
-            toast.error('Could not proceed to checkout. Please try again.');
-            setIsBuying(false); // Reset button on error
-            return;
-        }
+        // ** THE FIX **
+        // Stop using sessionStorage. Pass the product ID and quantity as
+        // URL parameters, which your checkout page already knows how to read.
 
-        // 2. Check session and navigate
+        const checkoutUrl = `/checkout?buyNow=true&pid=${product.id}&qty=${quantity}`;
+
         if (!session) {
-            const redirectUrl = encodeURIComponent('/checkout?buyNow=true');
-            // FIX 2: Just navigate.
+            const redirectUrl = encodeURIComponent(checkoutUrl);
             router.push(`/login?redirect=${redirectUrl}`);
-            return;
+            return; // No need to set isBuying(false), navigation is happening
         }
 
-        // FIX 2: Just navigate.
-        router.push(`/checkout?buyNow=true`);
+        // Just navigate.
+        router.push(checkoutUrl);
 
-        // The component will unmount on navigation, resetting the "Proceeding..." state.
+        // No need to set isBuying(false), the component will unmount.
     };
 
     return (
