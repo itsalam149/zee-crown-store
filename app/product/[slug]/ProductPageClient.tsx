@@ -11,16 +11,15 @@ import toast from 'react-hot-toast';
 import { Minus, Plus, ShoppingCart, Zap, CheckCircle } from 'lucide-react';
 import BackButton from '@/components/ui/BackButton';
 import { createClient } from '@/lib/supabase-client';
-import { useCart } from '@/store/CartContext';
+import { useCart } from '@/store/CartContext'; // Make sure this path is correct
 
 export default function ProductPageClient({ product }: { product: Product }) {
     const router = useRouter();
     const supabase = createClient();
     const { session } = useAuthStore();
 
-    // This line is still broken. Send me CartContext.tsx to fix it.
-    // const { refreshCart } = useCart(); 
-    const { ...cartContext } = useCart();
+    // FIX 1: Correctly import and use addToCart from the context
+    const { addToCart } = useCart();
 
     const [quantity, setQuantity] = useState(1);
     const [isAdding, setIsAdding] = useState(false);
@@ -30,69 +29,32 @@ export default function ProductPageClient({ product }: { product: Product }) {
         ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
         : 0;
 
-    const handleAddToCartAction = async () => {
-        // ... (This function is correct, no changes) ...
-        if (!session) {
-            router.push('/login');
-            return { success: false };
-        }
-        const { data: existingItem, error: fetchError } = await supabase
-            .from('cart_items')
-            .select('id, quantity')
-            .eq('user_id', session.user.id)
-            .eq('product_id', product.id)
-            .maybeSingle();
-        if (fetchError) {
-            toast.error(fetchError.message);
-            return { success: false };
-        }
-        if (existingItem) {
-            const newQuantity = existingItem.quantity + quantity;
-            const { error } = await supabase
-                .from('cart_items')
-                .update({ quantity: newQuantity })
-                .eq('id', existingItem.id);
-            if (error) { toast.error(`Error: ${error.message}`); return { success: false }; }
-        } else {
-            const { error } = await supabase.from('cart_items').insert({
-                product_id: product.id,
-                quantity,
-                user_id: session.user.id,
-            });
-            if (error) { toast.error(`Error: ${error.message}`); return { success: false }; }
-        }
-        return { success: true };
-    };
-
     const handleAddToCart = async () => {
         setIsAdding(true);
-        const { success } = await handleAddToCartAction();
-        if (success) {
-            // --- THIS IS THE FIX ---
-            // 1. Capture the toast ID
-            const toastId = toast.success(`${quantity} × ${product.name} added to cart!`);
-
-            // console.log("CartContext needs to be refreshed!", cartContext);
-            // refreshCart(); // This line is broken
-
-            setTimeout(() => {
-                // 2. Dismiss the toast manually
-                toast.dismiss(toastId);
-                router.push('/');
-            }, 1000);
-            // ------------------------
-
+        if (!session) {
+            router.push('/login');
+            setIsAdding(false); // Stop loading on redirect
             return;
         }
 
-        if (session) {
-            setIsAdding(false);
-        }
+        // Call the context function
+        await addToCart(product.id, quantity);
+
+        const toastId = toast.success(`${quantity} × ${product.name} added to cart!`);
+
+        // After 1 second, dismiss toast and navigate home
+        setTimeout(() => {
+            toast.dismiss(toastId);
+            router.push('/');
+        }, 1000);
+
+        // No need to set isAdding(false) because we are navigating away
     };
 
-    // ... (handleBuyNow and the rest of the component are correct) ...
     const handleBuyNow = async () => {
         setIsBuying(true);
+
+        // 1. Set item for checkout page
         try {
             const buyNowItem = {
                 product_id: product.id,
@@ -109,14 +71,22 @@ export default function ProductPageClient({ product }: { product: Product }) {
         } catch (e) {
             console.error('Failed to store Buy Now item:', e);
             toast.error('Could not proceed to checkout. Please try again.');
-            setIsBuying(false);
+            setIsBuying(false); // Reset button on error
             return;
         }
+
+        // 2. Check session and navigate
         if (!session) {
-            router.push('/login?redirect=' + encodeURIComponent('/checkout?buyNow=true'));
+            const redirectUrl = encodeURIComponent('/checkout?buyNow=true');
+            // FIX 2: Just navigate.
+            router.push(`/login?redirect=${redirectUrl}`);
             return;
         }
+
+        // FIX 2: Just navigate.
         router.push(`/checkout?buyNow=true`);
+
+        // The component will unmount on navigation, resetting the "Proceeding..." state.
     };
 
     return (

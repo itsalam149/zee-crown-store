@@ -49,14 +49,14 @@ export default function RootLayout({
         </SupabaseProvider>
 
         <Toaster
-          position="bottom-center"
+          position="top-center"
           toastOptions={{
-            duration: 3000,
+            duration: 1000,
             success: {
-              duration: 2000,
+              duration: 1000,
             },
             error: {
-              duration: 4000,
+              duration: 1000,
             },
           }}
         />

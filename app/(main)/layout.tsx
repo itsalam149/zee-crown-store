@@ -47,7 +47,7 @@ function MainLayoutContent({ children, modal }: MainLayoutProps) {
               We add `pt-16` or similar to offset the sticky Navbar.
               (This padding should match your Navbar's height).
             */}
-            <main className="flex-grow container mx-auto px-4 sm:px-6 md:px-8 py-6">
+            <main className="flex-grow container mx-auto px-4 sm:px-6 md:px-8 py-6 pt-16">
                 {children}
                 {modal}
             </main>

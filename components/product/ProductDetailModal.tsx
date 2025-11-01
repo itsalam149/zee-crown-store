@@ -1,4 +1,4 @@
-// components/modals/ProductDetailModal.tsx
+// components/product/ProductDetailModal.tsx
 'use client';
 
 import { Product } from '@/lib/types';
@@ -10,92 +10,52 @@ import { createClient } from '@/lib/supabase-client';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 import { Minus, Plus, ShoppingCart, Zap, CheckCircle } from 'lucide-react';
-import { useCart } from '@/store/CartContext';
+import { useCart } from '@/store/CartContext'; // Make sure this path is correct
 
 export default function ProductDetailModal({ product, closeModal }: { product: Product, closeModal: () => void }) {
     const router = useRouter();
     const supabase = createClient();
     const { session } = useAuthStore();
 
-    // This line is still broken. Send me CartContext.tsx to fix it.
-    // const { refreshCart } = useCart(); 
-    const { ...cartContext } = useCart();
+    // FIX 1: Correctly import and use addToCart from the context
+    const { addToCart } = useCart();
 
     const [quantity, setQuantity] = useState(1);
     const [isAdding, setIsAdding] = useState(false);
-    const [isBuying, setIsBuying] = new useState(false);
+    const [isBuying, setIsBuying] = useState(false); // Fixed: Removed 'new'
 
     const discount = product.mrp && product.mrp > product.price
         ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
         : 0;
 
-    const addToCartUpsertAction = async () => {
-        // ... (This function is correct, no changes) ...
+    const handleAddToCart = async () => {
+        setIsAdding(true);
         if (!session) {
             toast.error('Please login to continue.');
             closeModal();
             router.push('/login');
-            return { success: false };
-        }
-        const { data: existingItem, error: fetchError } = await supabase
-            .from('cart_items')
-            .select('id, quantity')
-            .eq('user_id', session.user.id)
-            .eq('product_id', product.id)
-            .maybeSingle();
-        if (fetchError) {
-            toast.error(fetchError.message);
-            return { success: false };
-        }
-        if (existingItem) {
-            const newQuantity = existingItem.quantity + quantity;
-            const { error } = await supabase
-                .from('cart_items')
-                .update({ quantity: newQuantity })
-                .eq('id', existingItem.id);
-            if (error) { toast.error(`Error: ${error.message}`); return { success: false }; }
-        } else {
-            const { error } = await supabase.from('cart_items').insert({
-                product_id: product.id,
-                quantity,
-                user_id: session.user.id,
-            });
-            if (error) { toast.error(`Error: ${error.message}`); return { success: false }; }
-        }
-        return { success: true };
-    };
-
-    const handleAddToCart = async () => {
-        setIsAdding(true);
-        const { success } = await addToCartUpsertAction();
-
-        if (success) {
-            const toastId = toast.success(`${quantity} × ${product.name} added to cart!`);
-
-            // console.log("CartContext needs to be refreshed!", cartContext);
-            // refreshCart(); // This line is broken
-
-            setTimeout(() => {
-                toast.dismiss(toastId);
-
-                // --- THIS IS THE FIX ---
-                // We do NOT call closeModal().
-                // router.push('/') will navigate AND close the modal.
-                // closeModal(); // REMOVED THIS CONFLICTING LINE
-                router.push('/');
-                // ------------------------
-
-            }, 1000);
-
+            setIsAdding(false); // Stop loading on redirect
             return;
         }
 
-        setIsAdding(false);
+        // Call the context function. It will handle the Supabase logic.
+        await addToCart(product.id, quantity);
+
+        const toastId = toast.success(`${quantity} × ${product.name} added to cart!`);
+
+        // After 1 second (matching your global config), dismiss toast and close modal.
+        setTimeout(() => {
+            toast.dismiss(toastId);
+            closeModal(); // Close the modal
+        }, 1000);
+
+        // No need to set isAdding(false), as the component will unmount
     };
 
     const handleBuyNow = async () => {
         setIsBuying(true);
-        // ... (This logic is correct, no change needed) ...
+
+        // 1. Set item for checkout page
         try {
             const buyNowItem = {
                 product_id: product.id,
@@ -112,18 +72,22 @@ export default function ProductDetailModal({ product, closeModal }: { product: P
         } catch (e) {
             console.error('Failed to store Buy Now item:', e);
             toast.error('Could not proceed to checkout. Please try again.');
-            setIsBuying(false);
-            return;
-        }
-        if (!session) {
-            closeModal();
-            router.push('/login?redirect=' + encodeURIComponent('/checkout?buyNow=true'));
+            setIsBuying(false); // Reset button on error
             return;
         }
 
-        // This is also a redirect, so it will also close the modal.
-        closeModal(); // We can keep this one or remove it, but router.push is better
+        // 2. Check session and navigate
+        if (!session) {
+            const redirectUrl = encodeURIComponent('/checkout?buyNow=true');
+            // FIX 2: REMOVED closeModal(). router.push() handles closing the modal.
+            router.push(`/login?redirect=${redirectUrl}`);
+            return;
+        }
+
+        // FIX 2: REMOVED closeModal(). router.push() handles closing the modal.
         router.push(`/checkout?buyNow=true`);
+
+        // The component will unmount on navigation, resetting the "Proceeding..." state.
     };
 
     return (

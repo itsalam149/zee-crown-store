@@ -1,29 +1,29 @@
-import ProductCardSkeleton from '@/components/skeletons/ProductCardSkeleton';
+// app/(main)/loading.tsx
+import Image from 'next/image';
 
 export default function Loading() {
     return (
-        <div className="space-y-6 pb-12">
-            <div className="relative w-full">
-                <div className="w-full h-10 bg-lighter-gray rounded-full" />
-            </div>
-            <div className="w-full aspect-[2/1] md:aspect-[3/1] bg-lighter-gray rounded-lg animate-pulse" />
+        // This div will grow to fill the available space in the main tag
+        <div className="flex flex-grow flex-col items-center justify-center py-24 min-h-[60vh]">
+            <div className="relative h-24 w-24">
+                {/* Pulsing glow effect */}
+                <div className="absolute inset-0 animate-pulse rounded-full bg-primary/30 opacity-75 blur-md"></div>
 
-            <div className="flex justify-center items-center space-x-4 overflow-x-auto pb-2">
-                {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="flex flex-col items-center space-y-2">
-                        <div className="w-16 h-16 bg-lighter-gray rounded-full" />
-                        <div className="h-4 bg-lighter-gray rounded w-12" />
-                    </div>
-                ))}
+                {/* The spinning logo */}
+                <div className="relative animate-spin-slow">
+                    <Image
+                        src="/icon.png"
+                        alt="Loading..."
+                        width={96}
+                        height={96}
+                        priority
+                        className="rounded-full" // Added to make it look cleaner as it spins
+                    />
+                </div>
             </div>
-
-            <h2 className="text-2xl font-bold text-center h-8 bg-lighter-gray rounded w-1/3 mx-auto"></h2>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {Array.from({ length: 10 }).map((_, i) => (
-                    <ProductCardSkeleton key={i} />
-                ))}
-            </div>
+            <p className="mt-6 text-lg font-semibold text-dark-gray animate-pulse">
+                Loading...
+            </p>
         </div>
     );
 }
