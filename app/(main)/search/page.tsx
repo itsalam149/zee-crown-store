@@ -6,6 +6,30 @@ import { createClient } from '@/lib/supabase-client';
 import { Product } from '@/lib/types';
 import ProductCard from '@/components/product/ProductCard';
 import ProductCardSkeleton from '@/components/skeletons/ProductCardSkeleton';
+import { motion } from 'framer-motion';
+import { PackageSearch } from 'lucide-react'; // Import the icon
+
+// --- Animation Variants (Copied from page.tsx for consistency) ---
+const gridContainerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.04,
+        },
+    },
+};
+
+const gridItemVariants = {
+    hidden: { y: 20, opacity: 0, scale: 0.95 },
+    show: {
+        y: 0,
+        opacity: 1,
+        scale: 1,
+        transition: { type: 'spring', stiffness: 100, damping: 12 }
+    },
+};
+// -----------------------------------------------------------------
 
 export default function SearchPage() {
     const supabase = createClient();
@@ -15,6 +39,7 @@ export default function SearchPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // If there's no query, don't search.
         if (!query) {
             setProducts([]);
             setLoading(false);
@@ -23,10 +48,11 @@ export default function SearchPage() {
 
         const fetchProducts = async () => {
             setLoading(true);
+            setProducts([]); // Clear old results
             const { data } = await supabase
                 .from('products')
                 .select('*')
-                .ilike('name', `%${query}%`);
+                .ilike('name', `%${query}%`); // Search using the query
 
             setProducts(data || []);
             setLoading(false);
@@ -35,19 +61,73 @@ export default function SearchPage() {
         fetchProducts();
     }, [query, supabase]);
 
+    // --- Dynamic Title Logic ---
+    const renderTitle = () => {
+        if (!query) {
+            return "Search for products";
+        }
+        if (loading) {
+            return `Searching for "${query}"...`;
+        }
+        const count = products.length;
+        const resultText = count === 1 ? 'result' : 'results';
+        return `Found ${count} ${resultText} for "${query}"`;
+    };
+
     return (
-        <div>
-            <h1 className="text-3xl font-bold mb-6">
-                Search Results for "{query}"
+        <div className="pb-24 space-y-8">
+            <h1 className="text-3xl font-bold">
+                {renderTitle()}
             </h1>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {loading
-                    ? Array.from({ length: 10 }).map((_, i) => <ProductCardSkeleton key={i} />)
-                    : products.map((product) => <ProductCard key={product.id} product={product} />)}
-            </div>
+            {/* --- Loading State --- */}
+            {loading && (
+                <motion.div
+                    className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6"
+                    variants={gridContainerVariants}
+                    initial="hidden"
+                    animate="show"
+                >
+                    {Array.from({ length: 10 }).map((_, i) => (
+                        <ProductCardSkeleton key={i} />
+                    ))}
+                </motion.div>
+            )}
+
+            {/* --- Results Found State --- */}
+            {!loading && products.length > 0 && (
+                <motion.div
+                    className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6"
+                    variants={gridContainerVariants}
+                    initial="hidden"
+                    animate="show"
+                >
+                    {products.map((product) => (
+                        <motion.div
+                            key={product.id}
+                            variants={gridItemVariants}
+                            layout
+                        >
+                            <ProductCard product={product} />
+                        </motion.div>
+                    ))}
+                </motion.div>
+            )}
+
+            {/* --- No Results State --- */}
             {!loading && products.length === 0 && (
-                <p className="text-center py-12 text-gray-500">No products found for your search.</p>
+                <div className="flex flex-col items-center justify-center text-center py-16">
+                    <PackageSearch size={64} className="text-gray-300" />
+                    <h3 className="text-2xl font-bold mt-4">
+                        {query ? 'No Products Found' : 'Start a search'}
+                    </h3>
+                    <p className="mt-2 text-gray-500 max-w-sm">
+                        {query
+                            ? `We couldn't find any products matching "${query}". Try searching for something else.`
+                            : 'Use the search bar in the navigation to find products.'
+                        }
+                    </p>
+                </div>
             )}
         </div>
     )

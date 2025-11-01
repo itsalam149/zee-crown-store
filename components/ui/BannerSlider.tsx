@@ -1,4 +1,6 @@
+// components/ui/BannerSlider.tsx
 'use client';
+
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Banner } from '@/lib/types';
@@ -21,7 +23,7 @@ export default function BannerSlider({ banners }: { banners: Banner[] }) {
                     setCurrentIndex((prevIndex) =>
                         prevIndex === banners.length - 1 ? 0 : prevIndex + 1
                     ),
-                4000 // Slightly longer duration
+                4000
             );
         }
         return () => {
@@ -31,27 +33,33 @@ export default function BannerSlider({ banners }: { banners: Banner[] }) {
 
     if (!banners || banners.length === 0) {
         return (
-            <div className="w-full aspect-[2/1] md:aspect-[3/1] bg-lighter-gray rounded-lg animate-pulse" />
+            // Updated aspect ratios here as well for the skeleton
+            <div className="w-full aspect-[1.8/1] sm:aspect-[2.5/1] md:aspect-[3/1] lg:aspect-[3.5/1] bg-lighter-gray rounded-lg animate-pulse" />
         );
     }
 
     return (
         <div className="relative w-full mx-auto overflow-hidden rounded-lg shadow-lg">
             <div
-                className="flex transition-transform duration-700 ease-in-out" // Smoother transition
+                className="flex transition-transform duration-700 ease-in-out"
                 style={{ transform: `translateX(-${currentIndex * 100}%)` }}
             >
                 {banners.map((banner) => (
-                    <div key={banner.id} className="flex-shrink-0 w-full aspect-[2/1] md:aspect-[3/1] relative">
+                    // --- THIS IS THE UPDATED LINE ---
+                    <div
+                        key={banner.id}
+                        className="flex-shrink-0 w-full aspect-[1.8/1] sm:aspect-[2.5/1] md:aspect-[3/1] lg:aspect-[3.5/1] relative"
+                    >
                         <Image
                             src={banner.image_url}
                             alt="Promotional Banner"
                             fill
-                            sizes="(max-width: 768px) 100vw, 80vw"
+                            sizes="(max-width: 640px) 100vw, (max-width: 768px) 100vw, 80vw"
                             style={{ objectFit: 'cover' }}
                             priority={true}
                         />
                     </div>
+                    // --- END OF UPDATE ---
                 ))}
             </div>
 

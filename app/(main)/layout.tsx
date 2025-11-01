@@ -4,11 +4,12 @@
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
 import { useSearchParams } from 'next/navigation';
-import { useMemo, useState, Suspense } from 'react'; // Import useState and Suspense
+import { useMemo, Suspense } from 'react'; // Removed useState
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion'; // Import motion and AnimatePresence
-import Loading from './loading'; // Import a loading component for Suspense fallback
+// import { motion, AnimatePresence } from 'framer-motion'; // Removed motion
+import Loading from './loading'; // Keep loading for Suspense
 
+// Define the background classes
 const categoryBgClasses: { [key: string]: string } = {
     medicine: 'from-theme-green-bg to-gray-50',
     cosmetics: 'from-theme-blue-bg to-gray-50',
@@ -21,59 +22,45 @@ interface MainLayoutProps {
     modal?: React.ReactNode;
 }
 
-// Wrap the main logic in a component to use hooks after Suspense
+// This component uses the search params to dynamically change the background.
 function MainLayoutContent({ children, modal }: MainLayoutProps) {
     const searchParams = useSearchParams();
     const selectedCategory = useMemo(() => searchParams.get('category'), [searchParams]);
-    const bgGradient = selectedCategory ? (categoryBgClasses[selectedCategory] || 'from-grayBG to-gray-50') : 'from-grayBG to-gray-50';
 
-    // Lifted state for mobile menu
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-    const mainContentVariants = {
-        closed: {
-            y: 0,
-            transition: { type: 'spring', stiffness: 300, damping: 30 }
-        },
-        open: {
-            y: 60, // How much to push down
-            transition: { type: 'spring', stiffness: 300, damping: 30 }
-        }
-    };
+    // Determine the gradient. Fallback to default if no category or category not in map.
+    const bgGradient = selectedCategory
+        ? (categoryBgClasses[selectedCategory] || 'from-grayBG to-gray-50')
+        : 'from-grayBG to-gray-50';
 
     return (
         <div className={cn(
             "flex flex-col min-h-screen bg-gradient-to-b transition-colors duration-500 overflow-x-hidden",
             bgGradient
         )}>
-            {/* Pass state and setter down to Navbar */}
-            <Navbar
-                isMobileMenuOpen={isMobileMenuOpen}
-                setIsMobileMenuOpen={setIsMobileMenuOpen}
-            />
-            {/* Use AnimatePresence in case modal needs animating based on menu */}
-            <AnimatePresence>
-                <motion.main
-                    className="flex-grow container mx-auto px-4 sm:px-6 md:px-8 py-6 relative z-10" // Lower z-index than navbar
-                    variants={mainContentVariants}
-                    animate={isMobileMenuOpen ? 'open' : 'closed'}
-                    initial={false} // Prevent initial animation on load
-                >
-                    {children}
-                    {modal}
-                </motion.main>
-            </AnimatePresence>
+            {/* Navbar now manages its own state. 
+              We make it sticky to ensure it stays on top,
+              and its mobile menu will overlay the content.
+            */}
+            <Navbar />
+
+            {/* Main content is clean. No more variants.
+              We add `pt-16` or similar to offset the sticky Navbar.
+              (This padding should match your Navbar's height).
+            */}
+            <main className="flex-grow container mx-auto px-4 sm:px-6 md:px-8 py-6">
+                {children}
+                {modal}
+            </main>
+
             <Footer />
         </div>
     );
 }
 
-
-// Export the component wrapped in Suspense
+// The Suspense wrapper is still required because MainLayoutContent uses useSearchParams.
 export default function MainLayout({ children, modal }: MainLayoutProps) {
-    // Suspense is needed because MainLayoutContent uses useSearchParams
     return (
-        <Suspense fallback={<Loading />}> {/* Or a simpler loading indicator */}
+        <Suspense fallback={<Loading />}>
             <MainLayoutContent modal={modal}>
                 {children}
             </MainLayoutContent>

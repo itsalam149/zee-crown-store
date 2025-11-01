@@ -2,11 +2,12 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { Toaster } from 'react-hot-toast'; // Import Toaster
+import { Toaster } from 'react-hot-toast';
 import AuthProvider from '@/components/AuthProvider';
 import SupabaseProvider from '@/components/SupabaseProvider';
 import { CartProvider } from '@/store/CartContext';
 import Script from 'next/script';
+import NextTopLoader from 'nextjs-toploader'; // --- 1. ADD THIS IMPORT ---
 
 const inter = Inter({
   subsets: ['latin'],
@@ -26,6 +27,19 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} font-sans`}>
+        {/* --- 2. ADD THIS COMPONENT --- */}
+        <NextTopLoader
+          color="#2563EB" // Change this to your brand's primary color
+          initialPosition={0.08}
+          crawlSpeed={200}
+          height={3}
+          crawl={true}
+          showSpinner={false} // Cleaner look without the spinner
+          easing="ease"
+          speed={200}
+        />
+        {/* ----------------------------- */}
+
         <SupabaseProvider>
           <AuthProvider>
             <CartProvider>
@@ -34,26 +48,16 @@ export default function RootLayout({
           </AuthProvider>
         </SupabaseProvider>
 
-        {/* Configure Toaster with default options */}
         <Toaster
           position="bottom-center"
           toastOptions={{
-            // Apply a default duration to all toast types unless overridden
-            duration: 3000, // Set default duration to 3000ms (3 seconds)
-
-            // Optional: Customize specific types
+            duration: 3000,
             success: {
-              duration: 2000, // Success messages disappear faster
+              duration: 2000,
             },
             error: {
-              duration: 4000, // Error messages stay a bit longer
+              duration: 4000,
             },
-            // Style examples (optional)
-            // style: {
-            //   border: '1px solid #713200',
-            //   padding: '16px',
-            //   color: '#713200',
-            // },
           }}
         />
 
