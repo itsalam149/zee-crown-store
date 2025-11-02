@@ -174,17 +174,6 @@ function HomePageContent() {
                     ))}
                 </div>
 
-                <div className="border-t border-gray-200 pt-8 mb-8">
-                    <h2
-                        className={cn(
-                            'text-2xl md:text-3xl font-bold text-center capitalize transition-colors duration-500',
-                            textColor
-                        )}
-                    >
-                        {pageTitle}
-                    </h2>
-                </div>
-
                 <motion.div
                     className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6"
                     variants={gridContainerVariants}
