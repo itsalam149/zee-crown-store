@@ -1,13 +1,24 @@
+'use client'; // <-- 1. ADD THIS
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation'; // <-- 2. ADD THIS
 import { Product } from '@/lib/types';
 import { Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function ProductCard({ product }: { product: Product }) {
+    const searchParams = useSearchParams(); // <-- 3. ADD THIS
+    const currentCategory = searchParams.get('category'); // <-- 4. ADD THIS
+
     const discount = product.mrp && product.mrp > product.price
         ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
         : 0;
+
+    // 5. Construct the new href, preserving the category
+    const href = currentCategory
+        ? `/product/${product.id}?category=${currentCategory}`
+        : `/product/${product.id}`;
 
     return (
         <motion.div
@@ -16,7 +27,7 @@ export default function ProductCard({ product }: { product: Product }) {
             className="w-full"
         >
             <Link
-                href={`/product/${product.id}`}
+                href={href} // <-- 6. USE THE NEW HREF
                 scroll={false}
                 className="group block rounded-xl overflow-hidden glass-card transition-shadow duration-300 ease-out-expo hover:shadow-medium"
             >

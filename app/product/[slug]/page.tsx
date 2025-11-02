@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase-client';
 import { useEffect, useState, useRef } from 'react';
-import { useRouter, usePathname } from 'next/navigation'; // <-- 1. Import usePathname
+import { useRouter, usePathname } from 'next/navigation';
 import { X } from 'lucide-react';
 import { Product } from '@/lib/types';
 import Spinner from '@/components/ui/Spinner';
@@ -10,10 +10,11 @@ import ProductDetailModal from '@/components/product/ProductDetailModal';
 
 export default function ProductModal({ params }: { params: { slug: string } }) {
     const router = useRouter();
-    const pathname = usePathname(); // <-- 2. Get the current pathname
+    const pathname = usePathname();
     const supabase = createClient();
     const [product, setProduct] = useState<Product | null>(null);
     const [show, setShow] = useState(false);
+    const [isNavigating, setIsNavigating] = useState(false);
     const dialogRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -25,8 +26,8 @@ export default function ProductModal({ params }: { params: { slug: string } }) {
     }, [params.slug, supabase]);
 
     const handleClose = () => {
+        if (isNavigating) return; // Prevent double navigation
         setShow(false);
-        // This delay allows the closing animation to finish before navigating back
         setTimeout(() => router.back(), 300);
     };
 
@@ -44,22 +45,24 @@ export default function ProductModal({ params }: { params: { slug: string } }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // --- 3. THIS IS THE FIX ---
-    // This effect listens for changes in the URL.
-    // If the URL no longer matches the product's slug (e.g., you've
-    // navigated to '/checkout'), it will trigger the modal to close.
+    // Detect route changes and close modal
     useEffect(() => {
+        // If pathname changes to something other than the current product, hide the modal
         if (show && !pathname.includes(`/product/${params.slug}`)) {
+            console.log('Route changed, closing modal');
             setShow(false);
-            // We don't call router.back() here, just close the modal UI
-            // as the router has already moved on.
+            document.body.style.overflow = 'auto';
         }
     }, [pathname, params.slug, show]);
-    // -------------------------
 
     const onBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === dialogRef.current) handleClose();
     };
+
+    // Don't render if navigating away
+    if (!show && !pathname.includes(`/product/${params.slug}`)) {
+        return null;
+    }
 
     return (
         <div
@@ -81,10 +84,11 @@ export default function ProductModal({ params }: { params: { slug: string } }) {
                 </button>
 
                 {product ? (
-                    // Pass the handleClose function down to the child
-                    // The "Buy Now" button in this child component will
-                    // now work, because this parent will detect the URL change.
-                    <ProductDetailModal product={product} closeModal={handleClose} />
+                    <ProductDetailModal
+                        product={product}
+                        closeModal={handleClose}
+                        onNavigate={() => setIsNavigating(true)}
+                    />
                 ) : (
                     <div className="flex items-center justify-center w-full h-[70vh] md:h-auto">
                         <Spinner />

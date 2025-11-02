@@ -11,14 +11,12 @@ import toast from 'react-hot-toast';
 import { Minus, Plus, ShoppingCart, Zap, CheckCircle } from 'lucide-react';
 import BackButton from '@/components/ui/BackButton';
 import { createClient } from '@/lib/supabase-client';
-import { useCart } from '@/store/CartContext'; // Make sure this path is correct
+import { useCart } from '@/store/CartContext';
 
 export default function ProductPageClient({ product }: { product: Product }) {
     const router = useRouter();
     const supabase = createClient();
     const { session } = useAuthStore();
-
-    // This is correct
     const { addToCart } = useCart();
 
     const [quantity, setQuantity] = useState(1);
@@ -49,22 +47,37 @@ export default function ProductPageClient({ product }: { product: Product }) {
     const handleBuyNow = async () => {
         setIsBuying(true);
 
-        // ** THE FIX **
-        // Stop using sessionStorage. Pass the product ID and quantity as
-        // URL parameters, which your checkout page already knows how to read.
+        // Store item for checkout
+        try {
+            const buyNowItem = {
+                product_id: product.id,
+                quantity,
+                products: {
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    image_url: product.image_url,
+                    mrp: product.mrp,
+                },
+            };
+            sessionStorage.setItem('buyNowItem', JSON.stringify(buyNowItem));
+        } catch (e) {
+            console.error('Failed to store Buy Now item:', e);
+            toast.error('Could not proceed to checkout. Please try again.');
+            setIsBuying(false);
+            return;
+        }
 
-        const checkoutUrl = `/checkout?buyNow=true&pid=${product.id}&qty=${quantity}`;
+        const checkoutUrl = `/checkout?buyNow=true`;
 
         if (!session) {
             const redirectUrl = encodeURIComponent(checkoutUrl);
             router.push(`/login?redirect=${redirectUrl}`);
-            return; // No need to set isBuying(false), navigation is happening
+            return;
         }
 
-        // Just navigate.
+        // Just navigate to checkout
         router.push(checkoutUrl);
-
-        // No need to set isBuying(false), the component will unmount.
     };
 
     return (

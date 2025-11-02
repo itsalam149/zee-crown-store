@@ -181,10 +181,6 @@ function CheckoutPageContent() {
         // Cleanup sessionStorage if the user navigates away from checkout during buy now
         return () => {
             if (isBuyNowFlow) {
-                // Consider if you want to clear this always on unmount,
-                // or only after successful order placement.
-                // For now, let's clear it on unmount to prevent stale data
-                // if the user navigates back and forth.
                 // sessionStorage.removeItem('buyNowItem'); // Moved cleanup to handleConfirmOrder success
             }
         }
@@ -194,16 +190,15 @@ function CheckoutPageContent() {
     // Calculate totals based on checkoutItems
     const subtotal = useMemo(() => checkoutItems.reduce((sum, item) => sum + (item.products.price * item.quantity), 0), [checkoutItems]);
 
-    // Fetch Shipping Fee (no changes needed here, depends on subtotal)
+    // Fetch Shipping Fee
     useEffect(() => {
         const fetchShippingFee = async () => {
             if (subtotal === 0) {
                 setShippingFee(0);
                 return;
             }
-            // Use default if Supabase call fails or returns no rules
             let fee = 40;
-            let threshold = 500; // A default threshold for free shipping
+            let threshold = 500;
 
             try {
                 const { data } = await supabase
@@ -217,11 +212,10 @@ function CheckoutPageContent() {
                     if (freeRule) threshold = freeRule.min_order_value;
 
                     const applicableRule = data.find(rule => subtotal >= rule.min_order_value);
-                    fee = applicableRule ? applicableRule.charge : (data[data.length - 1]?.charge ?? 40); // Use lowest defined fee or default
+                    fee = applicableRule ? applicableRule.charge : (data[data.length - 1]?.charge ?? 40);
                 }
             } catch (error) {
                 console.error("Error fetching shipping rules:", error);
-                // Keep default fee/threshold on error
             }
 
             setShippingFee(subtotal >= threshold ? 0 : fee);
@@ -253,12 +247,26 @@ function CheckoutPageContent() {
                 if (itemString) {
                     functionBody.buy_now_item = JSON.parse(itemString);
                 } else {
-                    throw new Error("Buy Now item data is missing.");
+                    const pid = searchParams.get('pid');
+                    const qty = parseInt(searchParams.get('qty') || '1', 10) || 1;
+                    if (pid) {
+                        const item = checkoutItems.find(i => i.product_id === pid);
+                        if (item) {
+                            functionBody.buy_now_item = {
+                                product_id: item.product_id,
+                                quantity: item.quantity,
+                                products: item.products
+                            };
+                        } else {
+                            throw new Error("Buy Now item data not found.");
+                        }
+                    } else {
+                        throw new Error("Buy Now item data is missing.");
+                    }
                 }
             }
 
             if (selectedPaymentMethod === 'ONLINE') {
-                // 1. Invoke "create-razorpay-order" Edge Function (no change needed here)
                 const { data: orderData, error: orderError } = await supabase.functions.invoke(
                     'create-razorpay-order', { body: { amount: total, currency: 'INR', receipt: `receipt_${Date.now()}` } }
                 );
@@ -266,17 +274,15 @@ function CheckoutPageContent() {
                 if (!orderData?.id) throw new Error("Failed to create Razorpay order ID.");
 
 
-                // 2. Open Razorpay Checkout
                 const selectedAddress = addresses.find(a => a.id === selectedAddressId);
                 const options = {
-                    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // Ensure this is set in your .env.local
-                    amount: orderData.amount, // Amount in paise
+                    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                    amount: orderData.amount,
                     currency: 'INR',
                     name: 'Zee Crown',
                     description: 'Order Payment',
-                    order_id: orderData.id, // Razorpay Order ID
+                    order_id: orderData.id,
                     handler: async (response: any) => {
-                        // 3. On successful payment, invoke "create-order" Edge Function with payment details
                         try {
                             const selectedAddress = addresses.find(a => a.id === selectedAddressId);
                             const responseApi = await fetch('/api/create-order', {
@@ -298,7 +304,6 @@ function CheckoutPageContent() {
                             if (!responseApi.ok) throw new Error(finalOrder?.error || 'Order creation failed');
                             if (!finalOrder?.orderId) throw new Error('Order ID not received after creation.');
 
-                            // Cleanup sessionStorage ONLY on successful order for Buy Now
                             if (isBuyNowFlow) {
                                 sessionStorage.removeItem('buyNowItem');
                             }
@@ -309,7 +314,7 @@ function CheckoutPageContent() {
                         } catch (finalOrderError: any) {
                             console.error("Error in handler after payment:", finalOrderError);
                             toast.error(finalOrderError.message || 'Failed to finalize order after payment.');
-                            setIsProcessing(false); // Re-enable button on handler failure
+                            setIsProcessing(false);
                         }
                     },
                     prefill: {
@@ -317,7 +322,7 @@ function CheckoutPageContent() {
                         email: session?.user.email,
                         contact: selectedAddress?.mobile_number || '',
                     },
-                    theme: { color: '#FF7C30' } // Example primary color
+                    theme: { color: '#FF7C30' }
                 };
 
                 const rzp = new window.Razorpay(options);
@@ -327,8 +332,6 @@ function CheckoutPageContent() {
                     toast.error(`Payment Failed: ${response.error.description || 'Unknown error'}`);
                     setIsProcessing(false);
                 });
-                // Note: Don't set isProcessing false here immediately after rzp.open()
-                // It should only be reset on success (handled by handler) or failure (rzp.on)
 
             } else { // COD
                 const selectedAddress = addresses.find(a => a.id === selectedAddressId);
@@ -346,7 +349,6 @@ function CheckoutPageContent() {
                 if (!responseApi.ok) throw new Error(finalOrder?.error || 'Order creation failed');
                 if (!finalOrder?.orderId) throw new Error('Order ID not received after creation.');
 
-                // Cleanup sessionStorage ONLY on successful order for Buy Now
                 if (isBuyNowFlow) {
                     sessionStorage.removeItem('buyNowItem');
                 }
@@ -357,9 +359,8 @@ function CheckoutPageContent() {
         } catch (error: any) {
             console.error("Order confirmation error:", error);
             toast.error(error.message || 'An unexpected error occurred.');
-            setIsProcessing(false); // Reset processing state on error
+            setIsProcessing(false);
         }
-        // Don't reset isProcessing on success here, navigation handles it.
     };
     // ----------------------------
 
@@ -374,39 +375,47 @@ function CheckoutPageContent() {
 
     // --- Component JSX ---
     return (
-        <div className="bg-grayBG min-h-screen pb-24 md:pb-0"> {/* Add padding bottom for mobile fixed summary */}
-            <div className="container mx-auto max-w-4xl p-4">
+        // FIX: Added pb-24 for mobile to avoid content being hidden by summary
+        <div className="bg-grayBG min-h-screen pb-24 md:pb-0">
+            {/*
+              FIX: This div is now responsive and has NO pt-16.
+              - Mobile: Full-width with padding (`p-4`)
+              - Desktop: Constrained container (`lg:container lg:mx-auto lg:max-w-4xl`)
+            */}
+            <div className="w-full p-4 lg:container lg:mx-auto lg:max-w-4xl">
+                {/* FIX: This button will now be at the top of the content area, right under the navbar. */}
                 <BackButton />
                 <h1 className="text-2xl md:text-3xl font-bold mb-6">Checkout {isBuyNowFlow ? '(Buy Now)' : ''}</h1>
 
-                <div className="flex flex-col lg:flex-row lg:items-start gap-8">
+                <div className="flex flex-col gap-8">
                     {/* Main Content */}
                     <div className="flex-grow space-y-6">
                         {/* Shipping Address Section */}
                         <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
                             <h2 className="text-xl font-bold mb-4">Shipping Address</h2>
                             {addresses.length > 0 && !showAddAddress ? (
-                                <div className="space-y-3">
-                                    {addresses.map(addr => (
-                                        <AddressCard
-                                            key={addr.id}
-                                            address={addr}
-                                            isSelected={selectedAddressId === addr.id}
-                                            onSelect={() => setSelectedAddressId(addr.id)}
-                                        />
-                                    ))}
+                                <div>
+                                    {/* --- HORIZONTAL LIST --- */}
+                                    <div className="flex overflow-x-auto space-x-3 pb-2 hide-scrollbar">
+                                        {addresses.map(addr => (
+                                            <AddressCard
+                                                key={addr.id}
+                                                address={addr}
+                                                isSelected={selectedAddressId === addr.id}
+                                                onSelect={() => setSelectedAddressId(addr.id)}
+                                            />
+                                        ))}
+                                    </div>
                                     <button onClick={() => setShowAddAddress(true)} className="flex items-center gap-2 text-primary font-semibold mt-4 hover:opacity-80 transition-opacity">
                                         <PlusCircle size={20} /> Add New Address
                                     </button>
                                 </div>
                             ) : (
                                 <div>
-                                    {/* Pass onSave to refresh data after adding, onCancel to hide form */}
                                     <AddressForm
                                         onSave={() => fetchData()}
-                                        onCancel={addresses.length > 0 ? () => setShowAddAddress(false) : undefined} // Only show cancel if other addresses exist
+                                        onCancel={addresses.length > 0 ? () => setShowAddAddress(false) : undefined}
                                     />
-                                    {/* Removed redundant cancel button */}
                                 </div>
                             )}
                         </div>
@@ -419,36 +428,35 @@ function CheckoutPageContent() {
                                 <PaymentOption label="Pay Online (UPI, Cards, etc.)" value="ONLINE" selected={selectedPaymentMethod} onSelect={setSelectedPaymentMethod} />
                             </div>
                         </div>
-                    </div>
 
-                    {/* Order Summary Sidebar/Fixed Footer */}
-                    {/* Use checkoutItems instead of cartItems */}
-                    <div className="w-full lg:w-96 lg:sticky lg:top-24">
-                        <div className="fixed bottom-0 left-0 right-0 bg-white p-4 pt-5 border-t border-gray-200
-                                        lg:border lg:relative lg:rounded-lg lg:shadow-md lg:p-6 z-20"> {/* Ensure z-index is high for fixed */}
-                            <h2 className="text-xl font-bold mb-4">Order Summary</h2>
-                            <div className="space-y-2 max-h-24 overflow-y-auto mb-3 lg:max-h-none lg:mb-4"> {/* Scrollable items on mobile */}
-                                {checkoutItems.map(item => (
-                                    <div key={item.id} className="flex justify-between text-sm items-center">
-                                        <span className="flex-1 truncate pr-2">{item.products.name} (x{item.quantity})</span>
-                                        <span className="font-medium whitespace-nowrap">₹{(item.products.price * item.quantity).toFixed(2)}</span>
-                                    </div>
-                                ))}
+                        {/* Order Summary (MOVED HERE) */}
+                        <div className="w-full">
+                            <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm border">
+                                <h2 className="text-xl font-bold mb-4">Order Summary</h2>
+                                <div className="space-y-2 max-h-24 overflow-y-auto mb-3 lg:max-h-none lg:mb-4">
+                                    {checkoutItems.map(item => (
+                                        <div key={item.id} className="flex justify-between text-sm items-center">
+                                            <span className="flex-1 truncate pr-2">{item.products.name} (x{item.quantity})</span>
+                                            <span className="font-medium whitespace-nowrap">₹{(item.products.price * item.quantity).toFixed(2)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <hr className="mb-3 lg:mb-4" />
+                                <SummaryRow label="Subtotal" value={`₹${subtotal.toFixed(2)}`} />
+                                <SummaryRow label="Shipping Fee" value={shippingFee > 0 ? `₹${shippingFee.toFixed(2)}` : (subtotal > 0 ? 'FREE' : '₹0.00')} />
+                                <hr className="my-3" />
+                                <SummaryRow label="Total" value={`₹${total.toFixed(2)}`} isTotal />
+
+                                <Button
+                                    onClick={handleConfirmOrder}
+                                    disabled={isProcessing || loading || checkoutItems.length === 0 || !selectedAddressId}
+                                    className="w-full mt-6"
+                                >
+                                    {isProcessing ? 'Placing Order...' : `Confirm Order (${selectedPaymentMethod})`}
+                                </Button>
                             </div>
-                            <hr className="mb-3 lg:mb-4" />
-                            <SummaryRow label="Subtotal" value={`₹${subtotal.toFixed(2)}`} />
-                            <SummaryRow label="Shipping Fee" value={shippingFee > 0 ? `₹${shippingFee.toFixed(2)}` : (subtotal > 0 ? 'FREE' : '₹0.00')} />
-                            <hr className="my-3" />
-                            <SummaryRow label="Total" value={`₹${total.toFixed(2)}`} isTotal />
-
-                            <Button
-                                onClick={handleConfirmOrder}
-                                disabled={isProcessing || loading || checkoutItems.length === 0 || !selectedAddressId}
-                                className="w-full mt-6"
-                            >
-                                {isProcessing ? 'Placing Order...' : `Confirm Order (${selectedPaymentMethod})`}
-                            </Button>
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -457,29 +465,26 @@ function CheckoutPageContent() {
 }
 
 
-// --- Sub-components for Checkout Page (No changes needed) ---
+// --- Sub-components for Checkout Page ---
 
 const AddressCard = ({ address, isSelected, onSelect }: { address: Address; isSelected: boolean; onSelect: () => void; }) => (
     <div
         onClick={onSelect}
         className={cn(
             "p-4 border rounded-lg cursor-pointer transition-all duration-150",
+            "w-72 flex-shrink-0", // <-- FIX for horizontal list
             isSelected
-                ? 'border-primary ring-2 ring-primary ring-offset-1 bg-primary/5' // Added subtle bg and offset
+                ? 'border-primary ring-2 ring-primary ring-offset-1 bg-primary/5'
                 : 'border-gray-200 hover:border-gray-400 bg-white'
         )}
     >
         <div className="flex items-start gap-3">
             <MapPin className={cn("h-5 w-5 mt-1 flex-shrink-0", isSelected ? 'text-primary' : 'text-gray-400')} />
-            <div className="flex-1 min-w-0"> {/* Added min-w-0 for truncation */}
-                {/* Use address.full_name here if it existed, otherwise fetch from profile if needed */}
-                {/* <p className="font-semibold text-dark-gray truncate">{address.full_name || 'No Name'}</p> */}
+            <div className="flex-1 min-w-0">
                 <p className="font-semibold text-dark-gray truncate">{address.street_address}</p>
                 <p className="text-sm text-gray-600 truncate">{address.house_no && `${address.house_no}, `}{address.city}, {address.state} - {address.postal_code}</p>
                 <p className="text-sm text-gray-600">Mobile: {address.mobile_number}</p>
             </div>
-            {/* Link to edit page - assumes edit page exists */}
-            {/* Ensure '/addresses/edit/${address.id}' is a valid route */}
             <Link href={`/addresses/edit/${address.id}`} className="p-1 text-gray-500 hover:text-primary flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                 <Pencil size={16} />
             </Link>
@@ -494,7 +499,7 @@ const PaymentOption = ({ label, value, selected, onSelect }: { label: string; va
         className={cn(
             "flex items-center p-4 border rounded-lg cursor-pointer transition-all duration-150",
             selected === value
-                ? 'border-primary ring-2 ring-primary ring-offset-1 bg-primary/5' // Added subtle bg and offset
+                ? 'border-primary ring-2 ring-primary ring-offset-1 bg-primary/5'
                 : 'border-gray-200 hover:border-gray-400 bg-white'
         )}
     >
@@ -504,15 +509,15 @@ const PaymentOption = ({ label, value, selected, onSelect }: { label: string; va
         )}>
             {selected === value && <div className="w-2 h-2 rounded-full bg-white" />}
         </div>
-        <span className="font-medium text-sm md:text-base">{label}</span> {/* Adjusted font size */}
+        <span className="font-medium text-sm md:text-base">{label}</span>
     </div>
 );
 
 
 const SummaryRow = ({ label, value, isTotal = false }: { label: string; value: string; isTotal?: boolean; }) => (
     <div className="flex justify-between items-center">
-        <p className={cn("text-sm md:text-base", isTotal ? 'font-semibold' : 'text-gray-600')}>{label}</p> {/* Adjusted font size */}
-        <p className={cn('font-semibold', isTotal ? 'text-lg md:text-xl text-primary' : 'text-base md:text-lg text-dark-gray')}>{value}</p> {/* Adjusted font size */}
+        <p className={cn("text-sm md:text-base", isTotal ? 'font-semibold' : 'text-gray-600')}>{label}</p>
+        <p className={cn('font-semibold', isTotal ? 'text-lg md:text-xl text-primary' : 'text-base md:text-lg text-dark-gray')}>{value}</p>
     </div>
 );
 

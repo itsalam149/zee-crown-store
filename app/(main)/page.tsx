@@ -5,10 +5,10 @@ import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from 'rea
 import { createClient } from '@/lib/supabase-client';
 import { Product, Banner } from '@/lib/types';
 import BannerSlider from '@/components/ui/BannerSlider';
-import CategoryItem from '@/components/product/CategoryItem'; // Restored this import
+import CategoryItem from '@/components/product/CategoryItem';
 import ProductCard from '@/components/product/ProductCard';
 import ProductCardSkeleton from '@/components/skeletons/ProductCardSkeleton';
-import { LayoutGrid, Pill, Droplet, Dumbbell, SprayCan, PackageSearch } from 'lucide-react'; // Restored icon imports
+import { LayoutGrid, Pill, Droplet, Dumbbell, SprayCan, PackageSearch } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import Spinner from '@/components/ui/Spinner';
 import { cn } from '@/lib/utils';
@@ -18,7 +18,6 @@ import Loading from './loading';
 
 const PRODUCTS_PER_PAGE = 10;
 
-// --- THIS IS RESTORED ---
 const categories = [
     { name: 'All', icon: LayoutGrid },
     { name: 'medicine', icon: Pill },
@@ -26,7 +25,6 @@ const categories = [
     { name: 'food', icon: Dumbbell },
     { name: 'perfumes', icon: SprayCan },
 ];
-// ------------------------
 
 const gridContainerVariants = {
     hidden: { opacity: 0 },
@@ -45,14 +43,14 @@ const gridItemVariants = {
         y: 0,
         opacity: 1,
         scale: 1,
-        transition: { type: 'spring', stiffness: 100, damping: 12 }
+        transition: { type: 'spring', stiffness: 100, damping: 12 },
     },
     exit: {
         y: -10,
         opacity: 0,
         scale: 0.98,
-        transition: { duration: 0.2 }
-    }
+        transition: { duration: 0.2 },
+    },
 };
 
 function HomePageContent() {
@@ -69,7 +67,6 @@ function HomePageContent() {
     const selectedCategory = useMemo(() => searchParams.get('category') || 'All', [searchParams]);
     const searchQuery = useMemo(() => searchParams.get('q') || '', [searchParams]);
 
-    // ... (loadMoreProducts, lastProductElementRef, and useEffect are all correct) ...
     const loadMoreProducts = useCallback(async () => {
         if (loadingMore || !hasMore) return;
         setLoadingMore(true);
@@ -87,8 +84,8 @@ function HomePageContent() {
         const { data: newProducts } = await queryBuilder.order('created_at', { ascending: false });
 
         if (newProducts && newProducts.length > 0) {
-            setProducts(prev => [...prev, ...newProducts]);
-            setPage(prev => prev + 1);
+            setProducts((prev) => [...prev, ...newProducts]);
+            setPage((prev) => prev + 1);
             if (newProducts.length < PRODUCTS_PER_PAGE) setHasMore(false);
         } else {
             setHasMore(false);
@@ -96,16 +93,22 @@ function HomePageContent() {
         setLoadingMore(false);
     }, [page, hasMore, loadingMore, selectedCategory, searchQuery, supabase]);
 
-    const lastProductElementRef = useCallback((node: HTMLDivElement) => {
-        if (loading) return;
-        if (observer.current) observer.current.disconnect();
-        observer.current = new IntersectionObserver(entries => {
-            if (entries[0].isIntersecting && hasMore && !loadingMore) {
-                loadMoreProducts();
-            }
-        }, { threshold: 0.5 });
-        if (node) observer.current.observe(node);
-    }, [loading, hasMore, loadMoreProducts, loadingMore]);
+    const lastProductElementRef = useCallback(
+        (node: HTMLDivElement) => {
+            if (loading) return;
+            if (observer.current) observer.current.disconnect();
+            observer.current = new IntersectionObserver(
+                (entries) => {
+                    if (entries[0].isIntersecting && hasMore && !loadingMore) {
+                        loadMoreProducts();
+                    }
+                },
+                { threshold: 0.5 }
+            );
+            if (node) observer.current.observe(node);
+        },
+        [loading, hasMore, loadMoreProducts, loadingMore]
+    );
 
     useEffect(() => {
         const fetchData = async () => {
@@ -138,23 +141,26 @@ function HomePageContent() {
         };
         fetchData();
     }, [selectedCategory, searchQuery, supabase]);
-    // ... (end of hooks) ...
 
-    const textColor = selectedCategory !== 'All' ? 'text-white' : 'text-dark-gray';
+    const textColor = 'text-dark-gray';
     const showUploadCard = !searchQuery && (selectedCategory === 'All' || selectedCategory === 'medicine');
-    const pageTitle = searchQuery ? `Results for "${searchQuery}"` : (selectedCategory === 'All' ? 'Featured Products' : selectedCategory);
+    const pageTitle = searchQuery
+        ? `Results for "${searchQuery}"`
+        : selectedCategory === 'All'
+            ? 'Featured Products'
+            : selectedCategory;
 
     return (
-        <div className="space-y-6 pb-24">
+        <div className="container mx-auto px-4 sm:px-6 md:px-8 space-y-6 pb-24">
 
+            {/* ✅ FIX: Removed top padding (no gap above banner) */}
             {!searchQuery && (
-                <div className="mb-6">
+                <div className="mt-0">
                     <BannerSlider banners={banners} />
                 </div>
             )}
 
             <div>
-                {/* --- THIS BLOCK IS NOW RESTORED --- */}
                 <div className="grid grid-cols-5 gap-x-2 gap-y-4 mb-8">
                     {categories.map((cat) => (
                         <CategoryItem
@@ -165,9 +171,8 @@ function HomePageContent() {
                         />
                     ))}
                 </div>
-                {/* ----------------------------------- */}
 
-                <div className="border-t border-white/10 pt-8 mb-8">
+                <div className="border-t border-gray-200 pt-8 mb-8">
                     <h2
                         className={cn(
                             'text-2xl md:text-3xl font-bold text-center capitalize transition-colors duration-500',
@@ -178,19 +183,17 @@ function HomePageContent() {
                     </h2>
                 </div>
 
-                {/* This is the laptop-friendly grid layout */}
                 <motion.div
                     className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6"
                     variants={gridContainerVariants}
                     initial="hidden"
                     animate="show"
                 >
-                    {/* Skeletons */}
-                    {loading && products.length === 0 && Array.from({ length: 10 }).map((_, i) => (
-                        <ProductCardSkeleton key={`skel-${i}`} />
-                    ))}
+                    {loading && products.length === 0 &&
+                        Array.from({ length: 10 }).map((_, i) => (
+                            <ProductCardSkeleton key={`skel-${i}`} />
+                        ))}
 
-                    {/* Animated Products */}
                     <AnimatePresence>
                         {!loading && showUploadCard && (
                             <motion.div
@@ -221,17 +224,15 @@ function HomePageContent() {
                     </AnimatePresence>
                 </motion.div>
 
-                {/* Loading spinner for loading more */}
                 {loadingMore && <Spinner />}
 
-                {/* No Results Message */}
                 {!loading && products.length === 0 && !showUploadCard && (
                     <div className="col-span-full text-center py-16 flex flex-col items-center">
-                        <PackageSearch size={64} className={cn('transition-colors duration-500', selectedCategory !== 'All' ? 'text-white/50' : 'text-gray-300')} />
-                        <h3 className={cn("text-2xl font-bold mt-4 transition-colors duration-500", textColor)}>
+                        <PackageSearch size={64} className="text-gray-300" />
+                        <h3 className={cn('text-2xl font-bold mt-4', textColor)}>
                             {searchQuery ? 'No Products Match Your Search' : 'No Products Found'}
                         </h3>
-                        <p className={cn("mt-2 transition-colors duration-500", selectedCategory !== 'All' ? 'text-white/70' : 'text-gray-500')}>
+                        <p className={cn('mt-2 text-gray-500')}>
                             Try adjusting your category{searchQuery ? ' or search term' : ''}.
                         </p>
                     </div>
@@ -241,11 +242,10 @@ function HomePageContent() {
     );
 }
 
-// Export default component wrapped in Suspense
 export default function HomePage() {
     return (
         <Suspense fallback={<Loading />}>
             <HomePageContent />
         </Suspense>
-    )
+    );
 }

@@ -9,15 +9,19 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
-import { Minus, Plus, ShoppingCart, Zap, CheckCircle } from 'lucide-react';
-import { useCart } from '@/store/CartContext'; // Make sure this path is correct
+import { Minus, Plus, ShoppingCart, Zap } from 'lucide-react';
+import { useCart } from '@/store/CartContext';
 
-export default function ProductDetailModal({ product, closeModal }: { product: Product, closeModal: () => void }) {
+interface ProductDetailModalProps {
+    product: Product;
+    closeModal: () => void;
+    onNavigate?: () => void;
+}
+
+export default function ProductDetailModal({ product, closeModal, onNavigate }: ProductDetailModalProps) {
     const router = useRouter();
     const supabase = createClient();
     const { session } = useAuthStore();
-
-    // This is correct
     const { addToCart } = useCart();
 
     const [quantity, setQuantity] = useState(1);
@@ -34,73 +38,70 @@ export default function ProductDetailModal({ product, closeModal }: { product: P
             toast.error('Please login to continue.');
             closeModal();
             router.push('/login');
-            setIsAdding(false); // Stop loading on redirect
+            setIsAdding(false);
             return;
         }
 
-        // Call the context function. It will handle the Supabase logic.
         await addToCart(product.id, quantity);
 
         const toastId = toast.success(`${quantity} × ${product.name} added to cart!`);
 
-        // After 1 second (matching your global config), dismiss toast and close modal.
         setTimeout(() => {
             toast.dismiss(toastId);
-            closeModal(); // This is correct, this function calls router.back()
+            closeModal();
         }, 1000);
-
-        // No need to set isAdding(false), as the component will unmount
     };
 
     const handleBuyNow = async () => {
+        console.log('Buy Now clicked');
         setIsBuying(true);
 
-        // 1. Set item for checkout page
+        // Notify parent that we're navigating
+        if (onNavigate) {
+            onNavigate();
+        }
+
+        // Store item for checkout
+        const buyNowItem = {
+            product_id: product.id,
+            quantity,
+            products: {
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                image_url: product.image_url,
+                mrp: product.mrp,
+            },
+        };
+
         try {
-            const buyNowItem = {
-                product_id: product.id,
-                quantity,
-                products: {
-                    id: product.id,
-                    name: product.name,
-                    price: product.price,
-                    image_url: product.image_url,
-                    mrp: product.mrp,
-                },
-            };
             sessionStorage.setItem('buyNowItem', JSON.stringify(buyNowItem));
+            console.log('Stored in sessionStorage:', buyNowItem);
         } catch (e) {
             console.error('Failed to store Buy Now item:', e);
             toast.error('Could not proceed to checkout. Please try again.');
-            setIsBuying(false); // Reset button on error
+            setIsBuying(false);
             return;
         }
 
-        // 2. Define the URL
         const checkoutUrl = `/checkout?buyNow=true`;
 
-        // 3. Check session and create redirect URL if needed
         if (!session) {
+            console.log('No session - redirecting to login');
             const redirectUrl = encodeURIComponent(checkoutUrl);
-
-            // ** THE FIX **
-            // Call closeModal() to start the exit animation.
-            closeModal();
-            // This push will override the router.back() in closeModal.
-            router.push(`/login?redirect=${redirectUrl}`);
+            // Force immediate navigation
+            window.location.href = `/login?redirect=${redirectUrl}`;
             return;
         }
 
-        // ** THE FIX **
-        // 1. Call closeModal() FIRST. This starts the modal's exit animation
-        //    and schedules its router.back().
-        closeModal();
+        // For authenticated users, force immediate navigation
+        console.log('Navigating to checkout');
+        toast.loading('Redirecting to checkout...', { duration: 500 });
 
-        // 2. Call router.push() SECOND. This *overrides* the pending
-        //    router.back() and navigates to the checkout page instead.
-        router.push(checkoutUrl);
-
-        // The component will unmount, so no need to set isBuying(false).
+        // Use window.location for immediate navigation
+        setTimeout(() => {
+            window.location.href = checkoutUrl;
+        }, 100);
     };
 
     return (
@@ -125,9 +126,21 @@ export default function ProductDetailModal({ product, closeModal }: { product: P
                     <div className="flex items-center justify-between">
                         <p className="text-lg font-semibold text-dark-gray">Quantity:</p>
                         <div className="flex items-center gap-2 bg-gray-100 rounded-full">
-                            <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-3 text-gray-600 hover:text-primary transition-colors rounded-full"><Minus size={16} /></button>
+                            <button
+                                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                className="p-3 text-gray-600 hover:text-primary transition-colors rounded-full"
+                                disabled={isBuying || isAdding}
+                            >
+                                <Minus size={16} />
+                            </button>
                             <p className="text-lg font-bold w-8 text-center">{quantity}</p>
-                            <button onClick={() => setQuantity(quantity + 1)} className="p-3 text-gray-600 hover:text-primary transition-colors rounded-full"><Plus size={16} /></button>
+                            <button
+                                onClick={() => setQuantity(quantity + 1)}
+                                className="p-3 text-gray-600 hover:text-primary transition-colors rounded-full"
+                                disabled={isBuying || isAdding}
+                            >
+                                <Plus size={16} />
+                            </button>
                         </div>
                     </div>
                     <div className="mt-6 grid grid-cols-2 gap-4">
@@ -139,9 +152,13 @@ export default function ProductDetailModal({ product, closeModal }: { product: P
                             <ShoppingCart size={20} />
                             {isAdding ? 'Adding...' : 'Add to Cart'}
                         </Button>
-                        <Button onClick={handleBuyNow} disabled={isAdding || isBuying} className="flex items-center justify-center gap-2">
+                        <Button
+                            onClick={handleBuyNow}
+                            disabled={isAdding || isBuying}
+                            className="flex items-center justify-center gap-2"
+                        >
                             <Zap size={20} />
-                            {isBuying ? 'Proceeding...' : 'Buy Now'}
+                            {isBuying ? 'Redirecting...' : 'Buy Now'}
                         </Button>
                     </div>
                 </div>

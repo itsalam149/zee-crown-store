@@ -75,7 +75,8 @@ export default function SearchPage() {
     };
 
     return (
-        <div className="pb-24 space-y-8">
+        // FIX: Added container classes and pt-16 back to this page
+        <div className="container mx-auto px-4 sm:px-6 md:px-8 pb-24 space-y-8 pt-16">
             <h1 className="text-3xl font-bold">
                 {renderTitle()}
             </h1>
