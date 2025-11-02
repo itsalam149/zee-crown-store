@@ -8,7 +8,24 @@ import BackButton from "@/components/ui/BackButton";
 import { createClient } from "@/lib/supabase-client";
 import { Address } from "@/lib/types";
 import AddressCard from "@/components/profile/AddressCard";
-import { PackageOpen } from "lucide-react";
+import { PackageOpen, Plus } from "lucide-react";
+import Button from "@/components/ui/Button";
+import AddressCardSkeleton from "@/components/skeletons/AddressCardSkeleton";
+import { motion, AnimatePresence } from "framer-motion";
+
+// Animation variants
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: { staggerChildren: 0.05 }
+    }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+};
 
 export default function AddressesPage() {
     const { session } = useAuthStore();
@@ -40,30 +57,61 @@ export default function AddressesPage() {
     if (!session) return null;
 
     return (
-        <div className="max-w-4xl mx-auto">
+        // Use max-w-5xl for consistency, remove py-10
+        <div className="max-w-5xl mx-auto px-4">
             <BackButton />
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold">My Addresses</h1>
-                <Link href="/addresses/new" className="bg-primary text-white font-bold py-2 px-4 rounded-full hover:opacity-90 transition-opacity">
-                    Add New Address
-                </Link>
+                <Button asChild>
+                    <Link href="/addresses/new" className="flex items-center gap-1.5">
+                        <Plus size={18} />
+                        Add New
+                    </Link>
+                </Button>
             </div>
 
-            {loading ? (
-                <p>Loading addresses...</p>
-            ) : addresses.length === 0 ? (
-                <div className="text-center py-20 bg-white rounded-lg shadow-md">
-                    <PackageOpen size={64} className="mx-auto text-gray-300" />
-                    <h1 className="text-2xl font-bold mt-4">No Saved Addresses</h1>
-                    <p className="text-gray-500 mt-2">Addresses you add will appear here.</p>
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    {addresses.map(address => (
-                        <AddressCard key={address.id} address={address} />
-                    ))}
-                </div>
-            )}
+            <AnimatePresence mode="wait">
+                {loading ? (
+                    <motion.div
+                        key="loading"
+                        className="space-y-4"
+                    >
+                        <AddressCardSkeleton />
+                        <AddressCardSkeleton />
+                    </motion.div>
+                ) : addresses.length === 0 ? (
+                    <motion.div
+                        key="empty"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="glass-card text-center p-12"
+                    >
+                        <PackageOpen size={64} className="mx-auto text-gray-300" />
+                        <h1 className="text-2xl font-bold mt-4">No Saved Addresses</h1>
+                        <p className="text-gray-500 mt-2">Addresses you add will appear here.</p>
+                        <Button asChild className="mt-8">
+                            <Link href="/addresses/new" className="flex items-center gap-2">
+                                <Plus size={18} />
+                                Add Your First Address
+                            </Link>
+                        </Button>
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        key="list"
+                        className="space-y-4"
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                    >
+                        {addresses.map(address => (
+                            <motion.div key={address.id} variants={itemVariants}>
+                                <AddressCard address={address} />
+                            </motion.div>
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

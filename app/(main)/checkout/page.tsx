@@ -2,11 +2,11 @@
 "use client";
 
 import { createClient } from '@/lib/supabase-client';
-import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'; // Import Suspense
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
-import { useRouter, useSearchParams } from 'next/navigation'; // Import useSearchParams
-import { Address, CartItem, Product } from '@/lib/types'; // Import Product type
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Address, CartItem, Product } from '@/lib/types';
 import toast from 'react-hot-toast';
 
 import BackButton from '@/components/ui/BackButton';
@@ -14,16 +14,16 @@ import Button from '@/components/ui/Button';
 import { Loader2, PlusCircle, Pencil, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AddressForm from '@/components/profile/AddressForm';
+import { useCart } from '@/store/CartContext'; // --- 1. IMPORT useCart ---
 
 // Define Razorpay at the window level for TypeScript
 declare const window: any;
 
 // Define a type for the Buy Now item stored in sessionStorage
-// It includes the essential product details needed for display and order creation
 interface BuyNowItem {
     product_id: string;
     quantity: number;
-    products: Pick<Product, 'id' | 'name' | 'price' | 'image_url' | 'mrp'>; // Use Pick for relevant fields
+    products: Pick<Product, 'id' | 'name' | 'price' | 'image_url' | 'mrp'>;
 }
 
 // --- Main Checkout Page Component Logic ---
@@ -32,9 +32,10 @@ function CheckoutPageContent() {
     const searchParams = useSearchParams();
     const { session } = useAuthStore();
     const supabase = createClient();
+    const { clearCart } = useCart(); // --- 2. GET clearCart FROM THE HOOK ---
 
     // State Management
-    const [checkoutItems, setCheckoutItems] = useState<CartItem[]>([]); // Use generic name
+    const [checkoutItems, setCheckoutItems] = useState<CartItem[]>([]);
     const [addresses, setAddresses] = useState<Address[]>([]);
     const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('COD');
@@ -48,7 +49,7 @@ function CheckoutPageContent() {
 
     // Fetch initial data (either single Buy Now item or full cart)
     const fetchData = useCallback(async () => {
-        // Ensure fresh session before deciding redirects (avoids false logouts on navigation)
+        // ... (this function is unchanged)
         let effectiveSession = session;
         if (!effectiveSession) {
             const { data: { session: liveSession } } = await supabase.auth.getSession();
@@ -60,34 +61,30 @@ function CheckoutPageContent() {
             return;
         }
         setLoading(true);
-        setShowAddAddress(false); // Reset address form state
+        setShowAddAddress(false);
 
         let itemsToCheckout: CartItem[] = [];
         let dataError = false;
 
-        // --- Determine items to checkout ---
         if (isBuyNowFlow) {
             try {
                 const itemString = sessionStorage.getItem('buyNowItem') || localStorage.getItem('buyNowItem');
                 if (itemString) {
                     const buyNowItem: BuyNowItem = JSON.parse(itemString);
-                    // Convert BuyNowItem structure slightly to match CartItem for consistency
-                    // Generate a temporary ID or use product_id if uniqueness isn't critical for display key
                     itemsToCheckout = [{
-                        id: `buyNow-${buyNowItem.product_id}`, // Temporary ID for React key
-                        user_id: effectiveSession.user.id, // Assign current user
+                        id: `buyNow-${buyNowItem.product_id}`,
+                        user_id: effectiveSession.user.id,
                         product_id: buyNowItem.product_id,
                         quantity: buyNowItem.quantity,
-                        created_at: new Date().toISOString(), // Add a created_at timestamp
-                        products: { // Ensure all required fields from Product are present or defaulted
+                        created_at: new Date().toISOString(),
+                        products: {
                             ...buyNowItem.products,
-                            description: '', // Add defaults for missing fields if CartItem expects them
+                            description: '',
                             category: '',
                             created_at: new Date().toISOString(),
                         }
                     }];
                 } else {
-                    // Fallback: build from URL params
                     const pid = searchParams.get('pid');
                     const qty = parseInt(searchParams.get('qty') || '1', 10) || 1;
                     if (!pid) {
@@ -123,7 +120,6 @@ function CheckoutPageContent() {
                 return;
             }
         } else {
-            // Fetch full cart
             const { data: cartData, error: cartError } = await supabase
                 .from('cart_items')
                 .select('*, products(*)')
@@ -134,14 +130,13 @@ function CheckoutPageContent() {
                 dataError = true;
             } else if (!cartData || cartData.length === 0) {
                 toast.error("Your cart is empty.");
-                router.push('/'); // Go home if cart is empty for normal checkout
+                router.push('/');
                 return;
             } else {
                 itemsToCheckout = cartData as CartItem[];
             }
         }
 
-        // --- Fetch Addresses (common logic) ---
         const { data: addressData, error: addressError } = await supabase
             .from('addresses')
             .select('*')
@@ -155,36 +150,30 @@ function CheckoutPageContent() {
 
         if (dataError) {
             setLoading(false);
-            // Decide where to redirect on general data error, maybe home or cart
             router.push(isBuyNowFlow ? '/' : '/cart');
             return;
         }
 
-        // --- Set State ---
         setCheckoutItems(itemsToCheckout);
         setAddresses(addressData || []);
 
-        // Select default address or show form
         if (addressData && addressData.length > 0) {
             const defaultAddress = addressData.find(addr => addr.is_default) || addressData[0];
             setSelectedAddressId(defaultAddress.id);
             setShowAddAddress(false);
         } else {
-            setShowAddAddress(true); // Show form if no addresses exist
+            setShowAddAddress(true);
         }
 
         setLoading(false);
-    }, [session, supabase, router, isBuyNowFlow]);
+    }, [session, supabase, router, isBuyNowFlow, searchParams]); // Added searchParams
 
     useEffect(() => {
-        fetchData(); // Fetch data on component mount or when dependencies change
-        // Cleanup sessionStorage if the user navigates away from checkout during buy now
+        fetchData();
         return () => {
-            if (isBuyNowFlow) {
-                // sessionStorage.removeItem('buyNowItem'); // Moved cleanup to handleConfirmOrder success
-            }
+            // ... (cleanup logic is unchanged)
         }
-    }, [fetchData, isBuyNowFlow]); // Rerun fetchData if isBuyNowFlow changes (though unlikely)
+    }, [fetchData, isBuyNowFlow]);
 
 
     // Calculate totals based on checkoutItems
@@ -192,6 +181,7 @@ function CheckoutPageContent() {
 
     // Fetch Shipping Fee
     useEffect(() => {
+        // ... (this logic is unchanged)
         const fetchShippingFee = async () => {
             if (subtotal === 0) {
                 setShippingFee(0);
@@ -235,13 +225,12 @@ function CheckoutPageContent() {
         setIsProcessing(true);
 
         try {
-            // Prepare the body for the Edge Function
+            // ... (functionBody logic is unchanged)
             const functionBody: { address_id: string; payment_method: string; buy_now_item?: BuyNowItem } = {
                 address_id: selectedAddressId,
-                payment_method: selectedPaymentMethod === 'ONLINE' ? 'Paid' : 'COD', // Send 'Paid' or 'COD'
+                payment_method: selectedPaymentMethod === 'ONLINE' ? 'Paid' : 'COD',
             };
 
-            // If it's a Buy Now flow, add the item details to the body
             if (isBuyNowFlow) {
                 const itemString = sessionStorage.getItem('buyNowItem');
                 if (itemString) {
@@ -304,9 +293,13 @@ function CheckoutPageContent() {
                             if (!responseApi.ok) throw new Error(finalOrder?.error || 'Order creation failed');
                             if (!finalOrder?.orderId) throw new Error('Order ID not received after creation.');
 
+                            // --- 3. ADDED THIS LOGIC ---
                             if (isBuyNowFlow) {
                                 sessionStorage.removeItem('buyNowItem');
+                            } else {
+                                clearCart(); // CLEAR THE CART
                             }
+                            // -------------------------
 
                             toast.success('Order placed successfully!');
                             router.replace(`/my-orders/${finalOrder.orderId}`);
@@ -349,9 +342,13 @@ function CheckoutPageContent() {
                 if (!responseApi.ok) throw new Error(finalOrder?.error || 'Order creation failed');
                 if (!finalOrder?.orderId) throw new Error('Order ID not received after creation.');
 
+                // --- 3. ADDED THIS LOGIC ---
                 if (isBuyNowFlow) {
                     sessionStorage.removeItem('buyNowItem');
+                } else {
+                    clearCart(); // CLEAR THE CART
                 }
+                // -------------------------
 
                 toast.success('Order placed successfully!');
                 router.replace(`/my-orders/${finalOrder.orderId}`);
@@ -366,6 +363,7 @@ function CheckoutPageContent() {
 
 
     if (loading) {
+        // ... (loading JSX is unchanged)
         return (
             <div className="flex justify-center items-center h-screen">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -373,17 +371,10 @@ function CheckoutPageContent() {
         );
     }
 
-    // --- Component JSX ---
+    // --- Component JSX (Unchanged) ---
     return (
-        // FIX: Added pb-24 for mobile to avoid content being hidden by summary
         <div className="bg-grayBG min-h-screen pb-24 md:pb-0">
-            {/*
-              FIX: This div is now responsive and has NO pt-16.
-              - Mobile: Full-width with padding (`p-4`)
-              - Desktop: Constrained container (`lg:container lg:mx-auto lg:max-w-4xl`)
-            */}
             <div className="w-full p-4 lg:container lg:mx-auto lg:max-w-4xl">
-                {/* FIX: This button will now be at the top of the content area, right under the navbar. */}
                 <BackButton />
                 <h1 className="text-2xl md:text-3xl font-bold mb-6">Checkout {isBuyNowFlow ? '(Buy Now)' : ''}</h1>
 
@@ -395,7 +386,6 @@ function CheckoutPageContent() {
                             <h2 className="text-xl font-bold mb-4">Shipping Address</h2>
                             {addresses.length > 0 && !showAddAddress ? (
                                 <div>
-                                    {/* --- HORIZONTAL LIST --- */}
                                     <div className="flex overflow-x-auto space-x-3 pb-2 hide-scrollbar">
                                         {addresses.map(addr => (
                                             <AddressCard
@@ -465,14 +455,14 @@ function CheckoutPageContent() {
 }
 
 
-// --- Sub-components for Checkout Page ---
+// --- Sub-components for Checkout Page (Unchanged) ---
 
 const AddressCard = ({ address, isSelected, onSelect }: { address: Address; isSelected: boolean; onSelect: () => void; }) => (
     <div
         onClick={onSelect}
         className={cn(
             "p-4 border rounded-lg cursor-pointer transition-all duration-150",
-            "w-72 flex-shrink-0", // <-- FIX for horizontal list
+            "w-72 flex-shrink-0",
             isSelected
                 ? 'border-primary ring-2 ring-primary ring-offset-1 bg-primary/5'
                 : 'border-gray-200 hover:border-gray-400 bg-white'

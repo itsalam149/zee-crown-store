@@ -9,6 +9,9 @@ import { cn } from '@/lib/utils';
 import Loading from './loading'; // Keep loading for Suspense
 
 const categoryBgClasses: { [key: string]: string } = {
+    // --- THIS IS THE UPDATED LINE ---
+    'All': 'from-grayBG to-lighter-gray', // Explicitly setting "All" to a light grey gradient
+
     medicine: 'from-[#6EE7B7] to-[#34D399]',   // soft light-green gradient
     cosmetics: 'from-[#93C5FD] to-[#3B82F6]',  // soft light-blue gradient
     food: 'from-[#FCA5A5] to-[#EF4444]',       // soft light-red gradient
@@ -24,17 +27,19 @@ interface MainLayoutProps {
 // This component uses the search params to dynamically change the background.
 function MainLayoutContent({ children, modal }: MainLayoutProps) {
     const searchParams = useSearchParams();
-    const selectedCategory = useMemo(() => searchParams.get('category'), [searchParams]);
 
-    // FIX: Put the dynamic gradient logic back
+    // This correctly defaults to 'All'
+    const selectedCategory = useMemo(() => searchParams.get('category') || 'All', [searchParams]);
+
+    // This logic will now pick up the new 'All' key
     const bgGradient = selectedCategory
-        ? (categoryBgClasses[selectedCategory] || 'from-grayBG to-gray-50')
+        ? (categoryBgClasses[selectedCategory] || 'from-grayBG to-gray-50') // Fallback is default grey
         : 'from-grayBG to-gray-50';
 
     return (
         <div className={cn(
             "flex flex-col min-h-screen bg-gradient-to-b transition-colors duration-500 overflow-x-hidden",
-            bgGradient // <-- This now uses your dynamic colors again
+            bgGradient // <-- This will now be the light grey gradient for "All"
         )}>
 
             <Navbar />

@@ -1,10 +1,12 @@
 'use client';
 
 import { Address } from "@/lib/types";
-import { MapPin, Trash2, Edit, Home, Phone } from "lucide-react";
+import { MapPin, Trash2, Edit, Home, Phone, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { createClient } from "@/lib/supabase-client";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export default function AddressCard({ address }: { address: Address }) {
     const supabase = createClient();
@@ -29,9 +31,13 @@ export default function AddressCard({ address }: { address: Address }) {
     };
 
     return (
-        <div className="bg-white p-5 rounded-lg shadow-md border border-gray-200 relative">
+        <motion.div
+            whileHover={{ y: -4, shadow: 'var(--tw-shadow-medium)' }}
+            className="glass-card p-5 relative overflow-hidden" // Use glass-card
+        >
             {address.is_default && (
-                <div className="absolute top-3 right-3 bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded-full">
+                <div className="absolute top-3 right-3 bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
+                    <CheckCircle size={14} />
                     Default
                 </div>
             )}
@@ -55,14 +61,17 @@ export default function AddressCard({ address }: { address: Address }) {
             <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
                 <button
                     onClick={() => router.push(`/addresses/edit/${address.id}`)}
-                    className="flex items-center gap-1 text-sm text-blue hover:underline"
+                    className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 p-2 rounded-md hover:bg-blue-50 transition-colors"
                 >
                     <Edit size={14} /> Edit
                 </button>
-                <button onClick={handleDelete} className="flex items-center gap-1 text-sm text-red hover:underline">
+                <button
+                    onClick={handleDelete}
+                    className="flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-800 p-2 rounded-md hover:bg-red-50 transition-colors"
+                >
                     <Trash2 size={14} /> Delete
                 </button>
             </div>
-        </div>
+        </motion.div>
     );
 }

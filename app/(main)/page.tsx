@@ -142,7 +142,10 @@ function HomePageContent() {
         fetchData();
     }, [selectedCategory, searchQuery, supabase]);
 
-    const textColor = 'text-dark-gray';
+    // --- THIS IS THE UPDATED LINE ---
+    // Title is white on colored backgrounds, dark-gray on 'All' (light grey) background
+    const textColor = (selectedCategory === 'All' || searchQuery) ? 'text-dark-gray' : 'text-white';
+
     const showUploadCard = !searchQuery && (selectedCategory === 'All' || selectedCategory === 'medicine');
     const pageTitle = searchQuery
         ? `Results for "${searchQuery}"`
@@ -153,7 +156,6 @@ function HomePageContent() {
     return (
         <div className="container mx-auto px-4 sm:px-6 md:px-8 space-y-6 pb-24">
 
-            {/* ✅ FIX: Removed top padding (no gap above banner) */}
             {!searchQuery && (
                 <div className="mt-0">
                     <BannerSlider banners={banners} />
@@ -172,16 +174,17 @@ function HomePageContent() {
                     ))}
                 </div>
 
-                <div className="border-t border-gray-200 pt-8 mb-8">
+                {/* --- TITLE USES THE NEW `textColor` VARIABLE --- */}
+                {/* <div className="border-t border-gray-200 pt-8 mb-8">
                     <h2
                         className={cn(
                             'text-2xl md:text-3xl font-bold text-center capitalize transition-colors duration-500',
-                            textColor
+                            textColor // This now adapts to the background
                         )}
                     >
                         {pageTitle}
                     </h2>
-                </div>
+                </div> */}
 
                 <motion.div
                     className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6"
@@ -226,13 +229,14 @@ function HomePageContent() {
 
                 {loadingMore && <Spinner />}
 
+                {/* --- "NO PRODUCTS" TEXT ALSO USES `textColor` --- */}
                 {!loading && products.length === 0 && !showUploadCard && (
                     <div className="col-span-full text-center py-16 flex flex-col items-center">
-                        <PackageSearch size={64} className="text-gray-300" />
+                        <PackageSearch size={64} className={cn(textColor === 'text-white' ? 'text-white/50' : 'text-gray-300')} />
                         <h3 className={cn('text-2xl font-bold mt-4', textColor)}>
                             {searchQuery ? 'No Products Match Your Search' : 'No Products Found'}
                         </h3>
-                        <p className={cn('mt-2 text-gray-500')}>
+                        <p className={cn('mt-2', textColor === 'text-white' ? 'text-white/70' : 'text-gray-500')}>
                             Try adjusting your category{searchQuery ? ' or search term' : ''}.
                         </p>
                     </div>

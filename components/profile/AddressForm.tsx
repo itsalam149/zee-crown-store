@@ -8,7 +8,7 @@ import Button from "../ui/Button";
 import { createClient } from "@/lib/supabase-client";
 import { useAuthStore } from "@/store/authStore";
 import toast from "react-hot-toast";
-import { Phone, MapPin, Home, Hash, Globe, Building } from "lucide-react"; // Import icons
+import { Phone, MapPin, Home, Hash, Globe, Building } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AddressFormProps {
@@ -183,7 +183,8 @@ export default function AddressForm({ address, onSave, onCancel }: AddressFormPr
     }
 
     return (
-        <form onSubmit={handleSubmit} className="p-6 bg-white rounded-lg shadow-subtle space-y-4">
+        // Use glass-card for consistency
+        <form onSubmit={handleSubmit} className="glass-card p-6 space-y-4">
 
             {/* Contact Details */}
             <div>
@@ -273,7 +274,7 @@ export default function AddressForm({ address, onSave, onCancel }: AddressFormPr
                             maxLength={6}
                             required
                         />
-                        Deu: </div>
+                    </div>
                 </div>
                 <div>
                     <label htmlFor="city" className="block text-sm font-medium text-gray-700">City</label>
