@@ -6,11 +6,12 @@ import { createClient } from '@/lib/supabase-client';
 import { Product } from '@/lib/types';
 import ProductCard from '@/components/product/ProductCard';
 import ProductCardSkeleton from '@/components/skeletons/ProductCardSkeleton';
-import { motion } from 'framer-motion';
+import { motion, Variants } from 'framer-motion'; // --- 1. IMPORTED Variants ---
 import { PackageSearch } from 'lucide-react'; // Import the icon
 
 // --- Animation Variants (Copied from page.tsx for consistency) ---
-const gridContainerVariants = {
+// --- 2. APPLIED Variants TYPE ---
+const gridContainerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
         opacity: 1,
@@ -20,7 +21,8 @@ const gridContainerVariants = {
     },
 };
 
-const gridItemVariants = {
+// --- 2. APPLIED Variants TYPE ---
+const gridItemVariants: Variants = {
     hidden: { y: 20, opacity: 0, scale: 0.95 },
     show: {
         y: 0,

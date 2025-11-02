@@ -1,7 +1,8 @@
 // app/login/page.tsx
 'use client';
 
-import { useState } from 'react';
+// --- 1. IMPORT Suspense ---
+import { useState, Suspense } from 'react';
 import { createClient } from '@/lib/supabase-client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -9,8 +10,10 @@ import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import { Mail, Lock } from 'lucide-react';
 import Image from 'next/image';
+import Spinner from '@/components/ui/Spinner'; // Import your spinner
 
-export default function LoginPage() {
+// --- 2. RENAME component, remove 'export default' ---
+function LoginPageContent() {
     const supabase = createClient();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -39,7 +42,7 @@ export default function LoginPage() {
             setLoading(false);
         } else {
             toast.success('Signed in successfully!');
-            const redirect = searchParams.get('redirect');
+            const redirect = searchParams.get('redirect'); // This line is safe now
             router.push(redirect || '/');
             router.refresh();
             // No need to set loading false, we are redirecting
@@ -85,5 +88,18 @@ export default function LoginPage() {
                 </p>
             </div>
         </div>
+    );
+}
+
+// --- 3. ADD a new 'export default' function that wraps your component ---
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen bg-grayBG">
+                <Spinner />
+            </div>
+        }>
+            <LoginPageContent />
+        </Suspense>
     );
 }

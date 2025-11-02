@@ -32,7 +32,13 @@ export default function AddressCard({ address }: { address: Address }) {
 
     return (
         <motion.div
-            whileHover={{ y: -4, shadow: 'var(--tw-shadow-medium)' }}
+            // --- THIS IS THE FIX ---
+            // Changed `shadow` to `boxShadow` and used the exact CSS value
+            whileHover={{
+                y: -4,
+                boxShadow: '0 10px 20px rgba(0, 0, 0, 0.07)'
+            }}
+            // -----------------------
             className="glass-card p-5 relative overflow-hidden" // Use glass-card
         >
             {address.is_default && (
@@ -60,7 +66,8 @@ export default function AddressCard({ address }: { address: Address }) {
             </div>
             <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
                 <button
-                    onClick={() => router.push(`/addresses/edit/${address.id}`)}
+                    // This link should be correct now based on your file structure
+                    onClick={() => router.push(`/addresses/${address.id}`)}
                     className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 p-2 rounded-md hover:bg-blue-50 transition-colors"
                 >
                     <Edit size={14} /> Edit

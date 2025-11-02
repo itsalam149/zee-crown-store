@@ -19,7 +19,7 @@ import {
 import Button from "@/components/ui/Button";
 import { useCart } from "@/store/CartContext";
 import SearchBar from "../ui/SearchBar";
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion'; // --- 1. IMPORTED Variants ---
 import { usePathname } from "next/navigation";
 
 const Navbar = () => {
@@ -62,7 +62,8 @@ const Navbar = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pathname]);
 
-    const mobileMenuVariants = {
+    // --- 2. APPLIED Variants TYPE ---
+    const mobileMenuVariants: Variants = {
         hidden: {
             opacity: 0,
             y: "-10%",
@@ -149,7 +150,7 @@ const Navbar = () => {
                                     <Link href="/addresses" className="flex items-center cursor-pointer">
                                         <MapPin className="mr-2 h-4 w-4" />
                                         <span>My Addresses</span>
-                                    </Link> {/* <-- THIS IS THE FIX (was </K>) */}
+                                    </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={handleSignOut} className="flex items-center cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">

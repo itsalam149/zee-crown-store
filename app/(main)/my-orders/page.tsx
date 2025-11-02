@@ -22,11 +22,11 @@ import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 import BackButton from '@/components/ui/BackButton';
 import Button from '@/components/ui/Button';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion'; // --- 1. IMPORTED Variants ---
 import { cn } from '@/lib/utils'; // Import cn for dynamic classes
 
 // Enhanced animation variants
-const containerVariants = {
+const containerVariants: Variants = { // <-- Added Variants type
     hidden: { opacity: 0 },
     visible: {
         opacity: 1,
@@ -37,7 +37,7 @@ const containerVariants = {
     }
 };
 
-const itemVariants = {
+const itemVariants: Variants = { // <-- Added Variants type
     hidden: { opacity: 0, y: 30, scale: 0.95 },
     visible: {
         opacity: 1,
@@ -57,12 +57,23 @@ const itemVariants = {
     }
 };
 
-const headerVariants = {
+// --- 2. APPLIED Variants TYPE ---
+const headerVariants: Variants = {
     hidden: { opacity: 0, y: -20 },
     visible: {
         opacity: 1,
         y: 0,
         transition: { duration: 0.5, ease: "easeOut" }
+    }
+};
+
+// --- 2. APPLIED Variants TYPE ---
+const statsVariants: Variants = {
+    hidden: { opacity: 0, scale: 0.9 },
+    visible: {
+        opacity: 1,
+        scale: 1,
+        transition: { duration: 0.4, ease: "easeOut" }
     }
 };
 
@@ -167,8 +178,7 @@ export default function MyOrdersPage() {
     // --- RENDER FUNCTIONS FOR CLEAN JSX ---
 
     const renderLoading = () => (
-        // --- UPDATED: Removed py-8 ---
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
             <BackButton />
             <div className="mt-6 space-y-6">
                 <div className="h-10 w-64 bg-gray-200 rounded-lg animate-pulse" />
@@ -183,8 +193,7 @@ export default function MyOrdersPage() {
     );
 
     const renderError = () => (
-        // --- UPDATED: Removed py-12 ---
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
             <BackButton />
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -228,8 +237,7 @@ export default function MyOrdersPage() {
     );
 
     const renderEmpty = () => (
-        // --- UPDATED: Removed py-12 ---
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
             <BackButton />
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -264,8 +272,7 @@ export default function MyOrdersPage() {
     if (orders.length === 0) return renderEmpty();
 
     return (
-        // --- UPDATED: Removed py-8 ---
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
             <BackButton />
 
             {/* Header */}

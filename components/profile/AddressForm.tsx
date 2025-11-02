@@ -144,9 +144,11 @@ export default function AddressForm({ address, onSave, onCancel }: AddressFormPr
                 state: formData.state,
                 postal_code: formData.postal_code,
                 country: formData.country,
-                house_no: formData.house_no || null,
+                // --- THIS IS THE FIX ---
+                house_no: formData.house_no || undefined,
                 mobile_number: formData.mobile_number,
-                landmark: formData.landmark || null,
+                landmark: formData.landmark || undefined,
+                // -----------------------
                 is_default: formData.is_default,
             };
 
@@ -168,10 +170,10 @@ export default function AddressForm({ address, onSave, onCancel }: AddressFormPr
             } else {
                 // Determine current path to decide whether to push or just refresh
                 const currentPath = window.location.pathname;
-                if (currentPath.includes('/addresses/new') || currentPath.includes('/addresses/edit')) {
+                if (currentPath.includes('/addresses/new') || currentPath.includes('/addresses/')) { // Updated to catch edit path
                     router.push("/addresses"); // Navigate away from dedicated add/edit pages
                 } else {
-                    router.refresh(); // Refresh data on the current page (e.g., /checkout or /addresses list)
+                    router.refresh(); // Refresh data on the current page (e.g., /checkout)
                 }
             }
         } catch (error: any) {

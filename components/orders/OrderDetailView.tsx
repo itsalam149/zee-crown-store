@@ -25,13 +25,13 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { useRouter } from "next/navigation"; // --- 1. IMPORT useRouter ---
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 // Helper to format the address object
 const formatAddress = (addr: any) => {
-    // ... (rest of the function is unchanged) ...
     if (typeof addr === 'string') return addr;
     if (!addr) return "No address provided.";
 
@@ -48,7 +48,6 @@ const formatAddress = (addr: any) => {
 
 // Enhanced status configurations
 const statusConfig: { [key: string]: { color: string; bg: string; icon: any; gradient: string } } = {
-    // ... (rest of the object is unchanged) ...
     pending: { color: 'text-yellow-600', bg: 'bg-yellow-100', icon: Clock, gradient: 'from-yellow-400 to-orange-400' },
     processing: { color: 'text-blue-600', bg: 'bg-blue-100', icon: Package, gradient: 'from-blue-400 to-cyan-400' },
     shipped: { color: 'text-indigo-600', bg: 'bg-indigo-100', icon: Truck, gradient: 'from-indigo-400 to-purple-400' },
@@ -57,7 +56,6 @@ const statusConfig: { [key: string]: { color: string; bg: string; icon: any; gra
 };
 
 const OrderStatusTracker = ({ status }: { status: Order['status'] }) => {
-    // ... (rest of the component is unchanged) ...
     const statuses: Order['status'][] = ['processing', 'shipped', 'delivered'];
     const currentStatusIndex = statuses.indexOf(status);
 
@@ -173,7 +171,6 @@ const InfoCard = ({
 );
 
 const OrderItemCard = ({ item, index }: { item: any, index: number }) => (
-    // ... (rest of the component is unchanged) ...
     <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -219,6 +216,7 @@ const OrderItemCard = ({ item, index }: { item: any, index: number }) => (
 );
 
 export default function OrderDetailView({ order }: { order: Order }) {
+    const router = useRouter(); // --- 2. INITIALIZE useRouter ---
     const isCancelled = order.status === 'cancelled';
     const config = statusConfig[order.status] || statusConfig.pending;
     const StatusIcon = config.icon;
@@ -226,7 +224,6 @@ export default function OrderDetailView({ order }: { order: Order }) {
     const [isDownloading, setIsDownloading] = useState(false);
 
     const handleShare = async () => {
-        // ... (rest of the function is unchanged) ...
         const shareData = {
             title: 'My Zee Crown Order',
             text: `Check out my order details: #${order.id.slice(0, 12).toUpperCase()}`,
@@ -251,7 +248,6 @@ export default function OrderDetailView({ order }: { order: Order }) {
     };
 
     const handleDownloadInvoice = async () => {
-        // ... (rest of the function is unchanged) ...
         setIsDownloading(true);
         const toastId = toast.loading('Generating invoice...');
 
@@ -332,8 +328,7 @@ export default function OrderDetailView({ order }: { order: Order }) {
 
 
     return (
-        // --- UPDATED: Removed py-8 ---
-        <div className="space-y-6 max-w-6xl mx-auto px-4">
+        <div className="space-y-6 max-w-6xl mx-auto px-4 py-8">
             <BackButton />
 
             {/* Header Section */}

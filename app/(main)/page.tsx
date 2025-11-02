@@ -13,7 +13,7 @@ import { useSearchParams } from 'next/navigation';
 import Spinner from '@/components/ui/Spinner';
 import { cn } from '@/lib/utils';
 import UploadPrescriptionCard from '@/components/ui/UploadPrescriptionCard';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion'; // --- 1. IMPORT Variants ---
 import Loading from './loading';
 
 const PRODUCTS_PER_PAGE = 10;
@@ -26,7 +26,8 @@ const categories = [
     { name: 'perfumes', icon: SprayCan },
 ];
 
-const gridContainerVariants = {
+// --- 2. APPLY Variants TYPE ---
+const gridContainerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
         opacity: 1,
@@ -37,7 +38,8 @@ const gridContainerVariants = {
     },
 };
 
-const gridItemVariants = {
+// --- 2. APPLY Variants TYPE ---
+const gridItemVariants: Variants = {
     hidden: { y: 20, opacity: 0, scale: 0.95 },
     show: {
         y: 0,
@@ -142,8 +144,6 @@ function HomePageContent() {
         fetchData();
     }, [selectedCategory, searchQuery, supabase]);
 
-    // --- THIS IS THE UPDATED LINE ---
-    // Title is white on colored backgrounds, dark-gray on 'All' (light grey) background
     const textColor = (selectedCategory === 'All' || searchQuery) ? 'text-dark-gray' : 'text-white';
 
     const showUploadCard = !searchQuery && (selectedCategory === 'All' || selectedCategory === 'medicine');
@@ -174,17 +174,16 @@ function HomePageContent() {
                     ))}
                 </div>
 
-                {/* --- TITLE USES THE NEW `textColor` VARIABLE --- */}
-                {/* <div className="border-t border-gray-200 pt-8 mb-8">
+                <div className="border-t border-gray-200 pt-8 mb-8">
                     <h2
                         className={cn(
                             'text-2xl md:text-3xl font-bold text-center capitalize transition-colors duration-500',
-                            textColor // This now adapts to the background
+                            textColor
                         )}
                     >
                         {pageTitle}
                     </h2>
-                </div> */}
+                </div>
 
                 <motion.div
                     className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6"
@@ -229,7 +228,6 @@ function HomePageContent() {
 
                 {loadingMore && <Spinner />}
 
-                {/* --- "NO PRODUCTS" TEXT ALSO USES `textColor` --- */}
                 {!loading && products.length === 0 && !showUploadCard && (
                     <div className="col-span-full text-center py-16 flex flex-col items-center">
                         <PackageSearch size={64} className={cn(textColor === 'text-white' ? 'text-white/50' : 'text-gray-300')} />
