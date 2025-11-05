@@ -33,8 +33,9 @@ export default function BannerSlider({ banners }: { banners: Banner[] }) {
 
     if (!banners || banners.length === 0) {
         return (
-            // Updated aspect ratios here as well for the skeleton
-            <div className="w-full aspect-[1.8/1] sm:aspect-[2.5/1] md:aspect-[3/1] lg:aspect-[3.5/1] bg-lighter-gray rounded-lg animate-pulse" />
+            // --- 1. UPDATED SKELETON ---
+            // Changed mobile aspect ratio from 1.8/1 to 2.5/1
+            <div className="w-full aspect-[2.5/1] md:aspect-[3/1] lg:aspect-[3.5/1] bg-lighter-gray rounded-lg animate-pulse" />
         );
     }
 
@@ -45,22 +46,23 @@ export default function BannerSlider({ banners }: { banners: Banner[] }) {
                 style={{ transform: `translateX(-${currentIndex * 100}%)` }}
             >
                 {banners.map((banner) => (
-                    // --- THIS IS THE UPDATED LINE ---
+                    // --- 2. UPDATED PARENT DIV ---
+                    // Changed default (mobile) from aspect-[1.8/1] to aspect-[2.5/1]
+                    // Removed sm: breakpoint as 2.5/1 is a good default
                     <div
                         key={banner.id}
-                        className="flex-shrink-0 w-full aspect-[1.8/1] sm:aspect-[2.5/1] md:aspect-[3/1] lg:aspect-[3.5/1] relative"
+                        className="flex-shrink-0 w-full aspect-[2.5/1] md:aspect-[3/1] lg:aspect-[3.5/1] relative"
                     >
+                        {/* --- 3. UPDATED IMAGE COMPONENT --- */}
                         <Image
                             src={banner.image_url}
                             alt="Promotional Banner"
-                            width={1200} // Example width
-                            height={400} // Example height
-                            sizes="(max-width: 640px) 100vw, (max-width: 768px) 100vw, 80vw"
-                            className="object-cover w-full h-auto" // Adjust to use w/h
+                            fill // Use fill to obey parent's aspect ratio
+                            sizes="(max-width: 767px) 100vw, (max-width: 1023px) 100vw, 80vw" // Adjusted sizes
+                            className="object-cover" // Removed w-full and h-auto
                             priority={true}
                         />
                     </div>
-                    // --- END OF UPDATE ---
                 ))}
             </div>
 
