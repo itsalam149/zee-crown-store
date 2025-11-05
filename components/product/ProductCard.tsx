@@ -8,7 +8,8 @@ import { Product } from '@/lib/types';
 import { Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-// --- ADD THIS HELPER FUNCTION ---
+// --- 1. DELETE THIS ENTIRE HELPER FUNCTION ---
+/*
 function getTransformedUrl(url: string, width: number, height: number) {
     if (!url) return '/placeholder.png'; // A fallback image
     // This replaces '/object/public/' with '/render/image/public/'
@@ -18,7 +19,8 @@ function getTransformedUrl(url: string, width: number, height: number) {
         `/render/image/public/`
     ) + `?width=${width}&height=${height}&resize=contain&quality=80`;
 }
-// ------------------------------
+*/
+// ---------------------------------------------
 
 export default function ProductCard({ product }: { product: Product }) {
     const searchParams = useSearchParams();
@@ -32,8 +34,8 @@ export default function ProductCard({ product }: { product: Product }) {
         ? `/product/${product.id}?category=${currentCategory}`
         : `/product/${product.id}`;
 
-    // --- USE THE HELPER FUNCTION IN THE SRC PROP ---
-    const transformedSrc = getTransformedUrl(product.image_url, 500, 500);
+    // --- 2. REMOVE THE HELPER FUNCTION CALL ---
+    // const transformedSrc = getTransformedUrl(product.image_url, 500, 500);
 
     return (
         <motion.div
@@ -53,7 +55,8 @@ export default function ProductCard({ product }: { product: Product }) {
                         </div>
                     )}
                     <Image
-                        src={transformedSrc} // <-- USE THE TRANSFORMED SRC
+                        // 3. USE THE ORIGINAL URL (and add a fallback)
+                        src={product.image_url || '/placeholder.png'}
                         alt={product.name}
                         fill
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
