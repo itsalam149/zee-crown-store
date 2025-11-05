@@ -53,9 +53,10 @@ export default function BannerSlider({ banners }: { banners: Banner[] }) {
                         <Image
                             src={banner.image_url}
                             alt="Promotional Banner"
-                            fill
+                            width={1200} // Example width
+                            height={400} // Example height
                             sizes="(max-width: 640px) 100vw, (max-width: 768px) 100vw, 80vw"
-                            style={{ objectFit: 'cover' }}
+                            className="object-cover w-full h-auto" // Adjust to use w/h
                             priority={true}
                         />
                     </div>

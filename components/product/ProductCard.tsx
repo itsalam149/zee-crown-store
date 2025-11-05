@@ -1,24 +1,39 @@
-'use client'; // <-- 1. ADD THIS
+// components/product/ProductCard.tsx
+'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useSearchParams } from 'next/navigation'; // <-- 2. ADD THIS
+import { useSearchParams } from 'next/navigation';
 import { Product } from '@/lib/types';
 import { Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+// --- ADD THIS HELPER FUNCTION ---
+function getTransformedUrl(url: string, width: number, height: number) {
+    if (!url) return '/placeholder.png'; // A fallback image
+    // This replaces '/object/public/' with '/render/image/public/'
+    // and adds transform parameters.
+    return url.replace(
+        '/object/public/',
+        `/render/image/public/`
+    ) + `?width=${width}&height=${height}&resize=contain&quality=80`;
+}
+// ------------------------------
+
 export default function ProductCard({ product }: { product: Product }) {
-    const searchParams = useSearchParams(); // <-- 3. ADD THIS
-    const currentCategory = searchParams.get('category'); // <-- 4. ADD THIS
+    const searchParams = useSearchParams();
+    const currentCategory = searchParams.get('category');
 
     const discount = product.mrp && product.mrp > product.price
         ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
         : 0;
 
-    // 5. Construct the new href, preserving the category
     const href = currentCategory
         ? `/product/${product.id}?category=${currentCategory}`
         : `/product/${product.id}`;
+
+    // --- USE THE HELPER FUNCTION IN THE SRC PROP ---
+    const transformedSrc = getTransformedUrl(product.image_url, 500, 500);
 
     return (
         <motion.div
@@ -27,7 +42,7 @@ export default function ProductCard({ product }: { product: Product }) {
             className="w-full"
         >
             <Link
-                href={href} // <-- 6. USE THE NEW HREF
+                href={href}
                 scroll={false}
                 className="group block rounded-xl overflow-hidden glass-card transition-shadow duration-300 ease-out-expo hover:shadow-medium"
             >
@@ -38,7 +53,7 @@ export default function ProductCard({ product }: { product: Product }) {
                         </div>
                     )}
                     <Image
-                        src={product.image_url}
+                        src={transformedSrc} // <-- USE THE TRANSFORMED SRC
                         alt={product.name}
                         fill
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
