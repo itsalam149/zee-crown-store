@@ -1,19 +1,15 @@
 // app/(main)/ProductListClient.tsx
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { ProductCardType } from '@/lib/types';
 import ProductCard from '@/components/product/ProductCard';
-import ProductCardSkeleton from '@/components/skeletons/ProductCardSkeleton';
 import Spinner from '@/components/ui/Spinner';
 import { cn } from '@/lib/utils';
 import UploadPrescriptionCard from '@/components/ui/UploadPrescriptionCard';
-import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { PackageSearch } from 'lucide-react';
 import CategoryItem from '@/components/product/CategoryItem';
 import { LayoutGrid, Pill, Droplet, Dumbbell, SprayCan } from 'lucide-react';
-
-const PRODUCTS_PER_PAGE = 10;
 
 const categories = [
     { name: 'All', icon: LayoutGrid },
@@ -23,33 +19,6 @@ const categories = [
     { name: 'perfumes', icon: SprayCan },
 ];
 
-const gridContainerVariants: Variants = {
-    hidden: { opacity: 0 },
-    show: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.04,
-            delayChildren: 0.1,
-        },
-    },
-};
-
-const gridItemVariants: Variants = {
-    hidden: { y: 20, opacity: 0, scale: 0.95 },
-    show: {
-        y: 0,
-        opacity: 1,
-        scale: 1,
-        transition: { type: 'spring', stiffness: 100, damping: 12 },
-    },
-    exit: {
-        y: -10,
-        opacity: 0,
-        scale: 0.98,
-        transition: { duration: 0.2 },
-    },
-};
-
 interface ProductListClientProps {
     initialProducts: ProductCardType[];
     initialHasMore: boolean;
@@ -57,6 +26,10 @@ interface ProductListClientProps {
     selectedCategory: string;
     searchQuery: string;
 }
+
+// Memoized to prevent unnecessary re-renders
+const MemoizedProductCard = memo(ProductCard);
+const MemoizedUploadCard = memo(UploadPrescriptionCard);
 
 export default function ProductListClient({
     initialProducts,
@@ -67,80 +40,90 @@ export default function ProductListClient({
 }: ProductListClientProps) {
 
     const [products, setProducts] = useState<ProductCardType[]>(initialProducts);
-    const [loading, setLoading] = useState(false); // No initial load
-    const [page, setPage] = useState(1);
+    const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(initialHasMore);
-    const [loadingMore, setLoadingMore] = useState(false);
-    const observer = useRef<IntersectionObserver>();
+    const [loading, setLoading] = useState(false);
+    const observerTarget = useRef<HTMLDivElement>(null);
+    const loadingRef = useRef(false); // Prevent double-loading
 
-    // --- THIS IS THE FIX ---
-    // When the category changes, new `initialProducts` are passed in.
-    // We MUST reset the page count and hasMore flag, otherwise the
-    // scroll state from the OLD category will be kept.
+    // Reset when filters change
     useEffect(() => {
         setProducts(initialProducts);
-        setPage(1); // <-- Resets the page counter
-        setHasMore(initialHasMore); // <-- Resets the hasMore flag
-    }, [initialProducts, initialHasMore, selectedCategory, searchQuery]); // <-- This ensures it resets on every category/search change
-    // --- END OF FIX ---
+        setPage(0);
+        setHasMore(initialHasMore);
+        setLoading(false);
+        loadingRef.current = false;
+    }, [selectedCategory, searchQuery, initialProducts, initialHasMore]);
 
+    // Load more products
+    const loadMore = useCallback(async () => {
+        // Double-check with ref to prevent race conditions
+        if (loadingRef.current || !hasMore) return;
 
-    const loadMoreProducts = useCallback(async () => {
-        if (loadingMore || !hasMore) return; // This check will now work correctly
-        setLoadingMore(true);
-
-        const params = new URLSearchParams({
-            category: selectedCategory,
-            q: searchQuery,
-            page: page.toString(), // `page` is 1, so it fetches page 1
-        });
+        loadingRef.current = true;
+        const nextPage = page + 1;
+        setLoading(true);
 
         try {
-            const res = await fetch(`/api/products?${params.toString()}`);
-            if (!res.ok) throw new Error("Failed to fetch more products");
+            const params = new URLSearchParams({
+                category: selectedCategory,
+                q: searchQuery,
+                page: nextPage.toString(),
+            });
+
+            const res = await fetch(`/api/products?${params}`, {
+                cache: 'no-store',
+                priority: 'high' // Prioritize this fetch
+            });
+
+            if (!res.ok) throw new Error('Fetch failed');
 
             const data = await res.json();
 
-            if (data.products && data.products.length > 0) {
-                setProducts((prev) => [...prev, ...data.products]);
-                setPage((prev) => prev + 1); // Go to page 2
+            if (data.products?.length > 0) {
+                // Use functional update for better performance
+                setProducts(prev => [...prev, ...data.products]);
+                setPage(nextPage);
                 setHasMore(data.hasMore);
             } else {
                 setHasMore(false);
             }
-        } catch (error) {
-            console.error("Error loading more products:", error);
+        } catch (err) {
+            console.error('Load error:', err);
             setHasMore(false);
+        } finally {
+            setLoading(false);
+            loadingRef.current = false;
         }
+    }, [hasMore, page, selectedCategory, searchQuery]);
 
-        setLoadingMore(false);
-    }, [page, hasMore, loadingMore, selectedCategory, searchQuery]);
+    // Intersection Observer with better threshold
+    useEffect(() => {
+        const target = observerTarget.current;
+        if (!target || !hasMore) return;
 
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && !loadingRef.current) {
+                    loadMore();
+                }
+            },
+            {
+                rootMargin: '200px', // Load early
+                threshold: 0
+            }
+        );
 
-    const lastProductElementRef = useCallback(
-        (node: HTMLDivElement) => {
-            if (loading) return;
-            if (observer.current) observer.current.disconnect();
-            observer.current = new IntersectionObserver(
-                (entries) => {
-                    // This callback will now have the correct `hasMore` value
-                    if (entries[0].isIntersecting && hasMore && !loadingMore) {
-                        loadMoreProducts();
-                    }
-                },
-                { threshold: 0.5 }
-            );
-            if (node) observer.current.observe(node);
-        },
-        [loading, hasMore, loadMoreProducts, loadingMore] // This will update correctly when `hasMore` is reset
-    );
+        observer.observe(target);
+        return () => observer.disconnect();
+    }, [loadMore, hasMore]);
 
     const showUploadCard = !searchQuery && (selectedCategory === 'All' || selectedCategory === 'medicine');
 
     return (
-        <div>
-            {/* Category List */}
-            <div className="grid grid-cols-5 gap-x-2 gap-y-4 mb-8">
+        <div className="space-y-6">
+            {/* Categories - No animation */}
+            <div className="grid grid-cols-5 gap-x-2 gap-y-4">
                 {categories.map((cat) => (
                     <CategoryItem
                         key={cat.name}
@@ -151,47 +134,38 @@ export default function ProductListClient({
                 ))}
             </div>
 
-            <motion.div
-                className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 mt-8"
-                variants={gridContainerVariants}
-                initial="hidden"
-                animate="show"
-            >
-                <AnimatePresence>
-                    {showUploadCard && (
-                        <motion.div
-                            key="upload-card"
-                            variants={gridItemVariants}
-                            exit="exit"
-                        >
-                            <UploadPrescriptionCard />
-                        </motion.div>
-                    )}
+            {/* Products Grid - Minimal animations */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+                {showUploadCard && <MemoizedUploadCard />}
 
-                    {products.map((product, index) => (
-                        <motion.div
-                            key={product.id}
-                            ref={products.length === index + 1 ? lastProductElementRef : null}
-                            variants={gridItemVariants}
-                            exit="exit"
-                        >
-                            <ProductCard product={product} />
-                        </motion.div>
-                    ))}
-                </AnimatePresence>
-            </motion.div>
+                {products.map((product) => (
+                    <MemoizedProductCard key={product.id} product={product} />
+                ))}
+            </div>
 
-            {loadingMore && <Spinner />}
+            {/* Load More Trigger */}
+            {hasMore && (
+                <div
+                    ref={observerTarget}
+                    className="h-20 flex items-center justify-center"
+                    style={{ minHeight: '80px' }} // Prevent layout shift
+                >
+                    {loading && <Spinner />}
+                </div>
+            )}
 
+            {/* Empty State - Only show if no loading */}
             {products.length === 0 && !loading && (
-                <div className="col-span-full text-center py-16 flex flex-col items-center">
-                    <PackageSearch size={64} className={cn(textColor === 'text-white' ? 'text-white/50' : 'text-gray-300')} />
-                    <h3 className={cn('text-2xl font-bold mt-4', textColor)}>
-                        {searchQuery ? 'No Products Match Your Search' : 'No Products Found'}
-                    </h3>
-                    <p className={cn('mt-2', textColor === 'text-white' ? 'text-white/70' : 'text-gray-500')}>
-                        Try adjusting your category{searchQuery ? ' or search term' : ''}.
-                    </p>
+                <div className="text-center py-16 space-y-4">
+                    <PackageSearch size={48} className={cn(textColor === 'text-white' ? 'text-white/50' : 'text-gray-300')} />
+                    <div>
+                        <h3 className={cn('text-xl font-bold', textColor)}>
+                            No Products Found
+                        </h3>
+                        <p className={cn('mt-2 text-sm', textColor === 'text-white' ? 'text-white/70' : 'text-gray-500')}>
+                            Try adjusting your filters
+                        </p>
+                    </div>
                 </div>
             )}
         </div>

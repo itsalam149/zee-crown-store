@@ -25,10 +25,6 @@ export default function CategoryItem({ name, Icon, isSelected }: CategoryItemPro
     const [isPending, startTransition] = useTransition();
 
     const handleClick = () => {
-        // Prevent re-clicking the same category
-        const currentCategory = searchParams.get('category') || 'All';
-        if (name === currentCategory && !searchParams.get('q')) return;
-
         const currentQuery = new URLSearchParams(Array.from(searchParams.entries()));
         if (name === 'All') {
             currentQuery.delete('category');
