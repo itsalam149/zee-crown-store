@@ -1,62 +1,86 @@
 // app/(main)/page.tsx
-// NO 'use client' at the top
 
 import { Suspense } from 'react';
-import { Product, Banner } from '@/lib/types';
+import { Banner, ProductCardType } from '@/lib/types';
 import BannerSlider from '@/components/ui/BannerSlider';
-// Import only the component that is rendered *here*
-import CategoryItem from '@/components/product/CategoryItem';
-import { LayoutGrid, Pill, Droplet, Dumbbell, SprayCan } from 'lucide-react';
 import Loading from './loading';
-import ProductListClient from './ProductListClient'; // This is the new client component
-import { createClient } from '@/lib/supabase-server'; // Use server client
+import ProductListClient from './ProductListClient';
+import { createClient } from '@/lib/supabase-server';
+import { unstable_noStore as noStore } from 'next/cache';
+
+// CRITICAL FIX: This forces the page to be dynamic and re-fetch on navigation
+export const dynamic = 'force-dynamic';
 
 const PRODUCTS_PER_PAGE = 10;
-
-// --- THIS ARRAY IS NOW MOVED to ProductListClient.tsx ---
-// const categories = [ ... ];
 
 interface HomePageProps {
     searchParams: { [key: string]: string | string[] | undefined };
 }
 
-// 1. Make the component async and accept searchParams
-async function HomePageContent({ searchParams }: HomePageProps) {
-    // 1.a. Use the server client for data fetching
+// Function to get the absolute URL for fetching (needed for server-side fetch)
+function getAbsoluteURL(path: string) {
+    const baseURL = process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : `http://localhost:${process.env.PORT || 3000}`;
+    return `${baseURL}${path}`;
+}
+
+// This function fetches all data for the page
+async function getPageData(category: string, query: string) {
+    noStore(); // Ensures searchParams are re-evaluated
     const supabase = createClient();
 
-    // 2. Get params from the prop, not hooks
-    const selectedCategory = (searchParams?.category as string) || 'All';
-    const searchQuery = (searchParams?.q as string) || '';
-
-    // 3. Create the data-fetching functions
+    // 1. Fetch Banners
     const getBanners = () => {
         let bannerQuery = supabase.from('banners').select('*').eq('is_active', true);
-        if (selectedCategory !== 'All') {
-            bannerQuery = bannerQuery.in('category', [selectedCategory, 'All']);
+        if (category !== 'All') {
+            bannerQuery = bannerQuery.in('category', [category, 'All']);
         }
         return bannerQuery.order('sort_order');
     };
 
-    const getProducts = () => {
-        let productQuery = supabase.from('products').select('*').range(0, PRODUCTS_PER_PAGE - 1);
-        if (selectedCategory !== 'All') {
-            productQuery = productQuery.eq('category', selectedCategory);
+    // 2. Fetch Products from our API route
+    const getProducts = async (): Promise<{ products: ProductCardType[], hasMore: boolean }> => {
+        const params = new URLSearchParams({
+            category: category,
+            q: query,
+            page: '0',
+        });
+
+        const url = getAbsoluteURL(`/api/products?${params.toString()}`);
+
+        try {
+            // Tell Next.js not to cache the result of this fetch
+            const res = await fetch(url, { cache: 'no-store' });
+            if (!res.ok) {
+                console.error("Failed to fetch products:", await res.text());
+                return { products: [], hasMore: false };
+            }
+            return res.json();
+        } catch (error) {
+            console.error("Error in getProducts fetch:", error);
+            return { products: [], hasMore: false };
         }
-        if (searchQuery) {
-            productQuery = productQuery.ilike('name', `%${searchQuery}%`);
-        }
-        return productQuery.order('created_at', { ascending: false });
     };
 
-    // 4. Fetch data in parallel on the server
-    const [bannerResult, productResult] = await Promise.all([
+    const [bannerResult, productData] = await Promise.all([
         getBanners(),
         getProducts()
     ]);
 
-    const banners: Banner[] = bannerResult.data || [];
-    const initialProducts: Product[] = productResult.data || [];
+    return {
+        banners: bannerResult.data || [],
+        initialProducts: productData.products || [],
+        hasMore: productData.hasMore || false,
+    };
+}
+
+async function HomePageContent({ searchParams }: HomePageProps) {
+    const selectedCategory = (searchParams?.category as string) || 'All';
+    const searchQuery = (searchParams?.q as string) || '';
+
+    // This data is now fresh on every navigation
+    const { banners, initialProducts, hasMore } = await getPageData(selectedCategory, searchQuery);
 
     const textColor = (selectedCategory === 'All' || searchQuery) ? 'text-dark-gray' : 'text-white';
 
@@ -64,19 +88,15 @@ async function HomePageContent({ searchParams }: HomePageProps) {
         <div className="container mx-auto px-4 sm:px-6 md:px-8 space-y-6 pb-24">
             {!searchQuery && (
                 <div className="mt-0">
-                    {/* 5. Pass banners as a prop */}
+                    {/* This prop pass is now correct */}
                     <BannerSlider banners={banners} />
                 </div>
             )}
 
             <div>
-                {/* The categories list is now rendered inside ProductListClient,
-                  so we remove it from here.
-                */}
-
-                {/* 6. Render the new Client Component with initial data */}
                 <ProductListClient
                     initialProducts={initialProducts}
+                    initialHasMore={hasMore}
                     textColor={textColor}
                     selectedCategory={selectedCategory}
                     searchQuery={searchQuery}
@@ -86,7 +106,7 @@ async function HomePageContent({ searchParams }: HomePageProps) {
     );
 }
 
-// 7. Wrap in Suspense because the main layout uses useSearchParams
+// This export is a standard (non-async) React component
 export default function HomePage(props: HomePageProps) {
     return (
         <Suspense fallback={<Loading />}>

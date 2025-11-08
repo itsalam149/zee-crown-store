@@ -1,3 +1,5 @@
+// lib/types.ts
+
 // Describes the structure of a product available in the store.
 export interface Product {
     id: string;
@@ -9,6 +11,18 @@ export interface Product {
     created_at: string;
     mrp?: number;
 }
+
+// --- ADD THIS NEW TYPE ---
+// Defines the partial product data needed for list/grid cards.
+export interface ProductCardType {
+    id: string;
+    name: string;
+    price: number;
+    image_url: string;
+    mrp?: number;
+    category: string; // Needed for building the correct link in the card
+}
+// -------------------------
 
 // Represents promotional banners displayed in the application.
 export interface Banner {
@@ -66,7 +80,7 @@ export interface Address {
     country: string;
     is_default: boolean;
     house_no?: string;
-    mobile_number?: string; // This field EXISTS in the schema
+    mobile_number?: string;
     landmark?: string;
     created_at?: string;
     updated_at?: string;
@@ -74,7 +88,7 @@ export interface Address {
 
 // Represents a user's profile information.
 export interface Profile {
-    id: string; // Corresponds to auth.users.id
+    id: string;
     full_name: string;
     phone_number?: string;
     created_at: string;

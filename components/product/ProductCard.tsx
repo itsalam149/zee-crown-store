@@ -3,39 +3,24 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useSearchParams } from 'next/navigation';
-import { Product } from '@/lib/types';
+import { ProductCardType } from '@/lib/types'; // Use new type
 import { Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
-// --- 1. DELETE THIS ENTIRE HELPER FUNCTION ---
-/*
-function getTransformedUrl(url: string, width: number, height: number) {
-    if (!url) return '/placeholder.png'; // A fallback image
-    // This replaces '/object/public/' with '/render/image/public/'
-    // and adds transform parameters.
-    return url.replace(
-        '/object/public/',
-        `/render/image/public/`
-    ) + `?width=${width}&height=${height}&resize=contain&quality=80`;
-}
-*/
-// ---------------------------------------------
-
-export default function ProductCard({ product }: { product: Product }) {
-    const searchParams = useSearchParams();
-    const currentCategory = searchParams.get('category');
+export default function ProductCard({ product }: { product: ProductCardType }) {
 
     const discount = product.mrp && product.mrp > product.price
         ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
         : 0;
 
-    const href = currentCategory
-        ? `/product/${product.id}?category=${currentCategory}`
+    // Build href with product.category
+    const href = product.category
+        ? `/product/${product.id}?category=${product.category}`
         : `/product/${product.id}`;
 
-    // --- 2. REMOVE THE HELPER FUNCTION CALL ---
-    // const transformedSrc = getTransformedUrl(product.image_url, 500, 500);
+    const [isImageLoaded, setIsImageLoaded] = useState(false);
 
     return (
         <motion.div
@@ -48,19 +33,23 @@ export default function ProductCard({ product }: { product: Product }) {
                 scroll={false}
                 className="group block rounded-xl overflow-hidden glass-card transition-shadow duration-300 ease-out-expo hover:shadow-medium"
             >
-                <div className="relative w-full aspect-square overflow-hidden">
+                <div className="relative w-full aspect-square overflow-hidden bg-lighter-gray">
                     {discount > 0 && (
                         <div className="absolute top-2 left-2 bg-red-500/90 backdrop-blur text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10">
                             {discount}% OFF
                         </div>
                     )}
                     <Image
-                        // 3. USE THE ORIGINAL URL (and add a fallback)
                         src={product.image_url || '/placeholder.png'}
                         alt={product.name}
                         fill
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                        className="object-cover transition-transform duration-500 ease-out-expo group-hover:scale-110"
+                        className={cn(
+                            "object-cover transition-all duration-500 ease-out-expo group-hover:scale-110",
+                            isImageLoaded ? "opacity-100" : "opacity-0"
+                        )}
+                        // Use onLoad to fix the console warning
+                        onLoad={() => setIsImageLoaded(true)}
                     />
                 </div>
                 <div className="p-3">
