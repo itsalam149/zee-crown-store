@@ -2,7 +2,7 @@
 const nextConfig = {
     images: {
         // ADD THIS LINE to disable all Next.js optimization
-        unoptimized: true,
+        // unoptimized: true,
 
         remotePatterns: [
             {
