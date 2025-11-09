@@ -1,3 +1,4 @@
+// app/(main)/my-orders/page.tsx (OPTIMIZED - Remove heavy animations)
 "use client";
 
 import { useEffect, useState, useCallback } from 'react';
@@ -15,72 +16,17 @@ import {
     Clock,
     Truck,
     CheckCircle,
-    XCircle // Added icons
+    XCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 import BackButton from '@/components/ui/BackButton';
 import Button from '@/components/ui/Button';
-import { motion, AnimatePresence, Variants } from 'framer-motion'; // --- 1. IMPORTED Variants ---
-import { cn } from '@/lib/utils'; // Import cn for dynamic classes
-
-// Enhanced animation variants
-const containerVariants: Variants = { // <-- Added Variants type
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.08,
-            delayChildren: 0.1
-        }
-    }
-};
-
-const itemVariants: Variants = { // <-- Added Variants type
-    hidden: { opacity: 0, y: 30, scale: 0.95 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        transition: {
-            type: "spring",
-            stiffness: 100,
-            damping: 15
-        }
-    },
-    exit: {
-        opacity: 0,
-        x: -50,
-        scale: 0.95,
-        transition: { duration: 0.2 }
-    }
-};
-
-// --- 2. APPLIED Variants TYPE ---
-const headerVariants: Variants = {
-    hidden: { opacity: 0, y: -20 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: { duration: 0.5, ease: "easeOut" }
-    }
-};
-
-// --- 2. APPLIED Variants TYPE ---
-const statsVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.9 },
-    visible: {
-        opacity: 1,
-        scale: 1,
-        transition: { duration: 0.4, ease: "easeOut" }
-    }
-};
+import { cn } from '@/lib/utils';
 
 type OrderStatus = 'all' | 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
 
-// --- Filter Configuration (Source of Truth) ---
-// Define filter buttons with icons and colors
 const filterConfig: {
     label: string;
     value: OrderStatus;
@@ -106,7 +52,6 @@ export default function MyOrdersPage() {
     const [retryCount, setRetryCount] = useState<number>(0);
     const [activeFilter, setActiveFilter] = useState<OrderStatus>('all');
 
-    // Calculate order statistics (still needed for filter counts)
     const orderStats = {
         total: orders.length,
         pending: orders.filter(o => o.status === 'pending').length,
@@ -136,8 +81,8 @@ export default function MyOrdersPage() {
                 setError(error.message);
             } else if (data) {
                 setOrders(data as Order[]);
-                setFilteredOrders(data as Order[]); // Set initial filtered list
-                setActiveFilter('all'); // Reset filter to 'all' on fetch
+                setFilteredOrders(data as Order[]);
+                setActiveFilter('all');
             }
         } catch (err: any) {
             console.error('Unexpected error:', err);
@@ -157,7 +102,6 @@ export default function MyOrdersPage() {
         fetchOrders();
     }, [session, router, fetchOrders]);
 
-    // Filter orders based on active filter
     useEffect(() => {
         if (activeFilter === 'all') {
             setFilteredOrders(orders);
@@ -175,7 +119,7 @@ export default function MyOrdersPage() {
         setActiveFilter(filter);
     };
 
-    // --- RENDER FUNCTIONS FOR CLEAN JSX ---
+    // --- RENDER FUNCTIONS ---
 
     const renderLoading = () => (
         <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -195,17 +139,8 @@ export default function MyOrdersPage() {
     const renderError = () => (
         <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
             <BackButton />
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="glass-card text-center p-12 mt-8"
-            >
-                <motion.div
-                    animate={{ rotate: [0, 10, -10, 0] }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                >
-                    <AlertTriangle size={72} className="mx-auto text-red-500" />
-                </motion.div>
+            <div className="bg-white shadow-md rounded-xl text-center p-12 mt-8">
+                <AlertTriangle size={72} className="mx-auto text-red-500" />
                 <h1 className="text-2xl sm:text-3xl font-bold mt-6">Unable to Load Orders</h1>
                 <p className="text-gray-600 mt-3 max-w-md mx-auto">
                     We encountered an issue while fetching your orders. This might be a temporary connection problem.
@@ -224,32 +159,15 @@ export default function MyOrdersPage() {
                         <Link href="/">Go Home</Link>
                     </Button>
                 </div>
-                <details className="mt-6 text-left max-w-md mx-auto">
-                    <summary className="text-sm text-gray-500 cursor-pointer hover:text-gray-700">
-                        Technical details
-                    </summary>
-                    <p className="text-xs text-red-600 mt-2 p-3 bg-red-50 rounded-lg font-mono">
-                        {error}
-                    </p>
-                </details>
-            </motion.div>
+            </div>
         </div>
     );
 
     const renderEmpty = () => (
         <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
             <BackButton />
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="glass-card text-center p-12 mt-8"
-            >
-                <motion.div
-                    animate={{ y: [0, -10, 0] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                >
-                    <PackageOpen size={80} className="mx-auto text-gray-300" />
-                </motion.div>
+            <div className="bg-white shadow-md rounded-xl text-center p-12 mt-8">
+                <PackageOpen size={80} className="mx-auto text-gray-300" />
                 <h1 className="text-2xl sm:text-3xl font-bold mt-6">No Orders Yet</h1>
                 <p className="text-gray-500 mt-3 max-w-md mx-auto">
                     Start your shopping journey and discover amazing products waiting for you.
@@ -260,14 +178,14 @@ export default function MyOrdersPage() {
                         Start Shopping
                     </Link>
                 </Button>
-            </motion.div>
+            </div>
         </div>
     );
 
     // --- MAIN RENDER ---
 
     if (loading) return renderLoading();
-    if (!session) return null; // Should be redirecting
+    if (!session) return null;
     if (error) return renderError();
     if (orders.length === 0) return renderEmpty();
 
@@ -276,12 +194,7 @@ export default function MyOrdersPage() {
             <BackButton />
 
             {/* Header */}
-            <motion.div
-                variants={headerVariants}
-                initial="hidden"
-                animate="visible"
-                className="mt-6"
-            >
+            <div className="mt-6">
                 <div className="flex items-center justify-between flex-wrap gap-4">
                     <div>
                         <h1 className="text-3xl sm:text-4xl font-bold">My Orders</h1>
@@ -299,20 +212,15 @@ export default function MyOrdersPage() {
                         Refresh
                     </Button>
                 </div>
-            </motion.div>
+            </div>
 
-            {/* --- ENHANCED Filter Tabs --- */}
-            <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="mt-8 glass-card p-2"
-            >
+            {/* Filter Tabs */}
+            <div className="mt-8 bg-white shadow-sm rounded-lg p-2">
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
                     <Filter className="h-4 w-4 text-gray-500 flex-shrink-0 ml-2" />
                     {filterConfig.map((filter) => {
                         const count = orderStats[filter.value as keyof typeof orderStats] as number || 0;
-                        if (filter.value !== 'all' && count === 0) return null; // Hide filter if count is 0
+                        if (filter.value !== 'all' && count === 0) return null;
 
                         return (
                             <button
@@ -321,7 +229,7 @@ export default function MyOrdersPage() {
                                 className={cn(
                                     "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0",
                                     activeFilter === filter.value
-                                        ? filter.activeClass // Apply dynamic active class
+                                        ? filter.activeClass
                                         : "bg-white text-gray-700 hover:bg-gray-100"
                                 )}
                             >
@@ -341,44 +249,23 @@ export default function MyOrdersPage() {
                         );
                     })}
                 </div>
-            </motion.div>
+            </div>
 
-            {/* Orders List */}
-            <motion.div
-                className="mt-8 space-y-6"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-            >
-                <AnimatePresence mode="popLayout">
-                    {filteredOrders.length === 0 ? (
-                        <motion.div
-                            key="no-results"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="glass-card text-center p-12"
-                        >
-                            <PackageOpen size={48} className="mx-auto text-gray-300" />
-                            <p className="text-gray-600 mt-4">
-                                No orders found with status: <span className="font-semibold">{activeFilter}</span>
-                            </p>
-                        </motion.div>
-                    ) : (
-                        filteredOrders.map((order, index) => (
-                            <motion.div
-                                key={order.id}
-                                variants={itemVariants}
-                                layout
-                                exit="exit"
-                                custom={index}
-                            >
-                                <OrderCard order={order} />
-                            </motion.div>
-                        ))
-                    )}
-                </AnimatePresence>
-            </motion.div>
+            {/* Orders List - NO ANIMATIONS */}
+            <div className="mt-8 space-y-6">
+                {filteredOrders.length === 0 ? (
+                    <div className="bg-white shadow-sm rounded-xl text-center p-12">
+                        <PackageOpen size={48} className="mx-auto text-gray-300" />
+                        <p className="text-gray-600 mt-4">
+                            No orders found with status: <span className="font-semibold">{activeFilter}</span>
+                        </p>
+                    </div>
+                ) : (
+                    filteredOrders.map((order) => (
+                        <OrderCard key={order.id} order={order} />
+                    ))
+                )}
+            </div>
         </div>
     );
 }

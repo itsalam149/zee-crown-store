@@ -1,4 +1,4 @@
-// app/(main)/ProductListClient.tsx
+// app/(main)/ProductListClient.tsx (OPTIMIZED)
 'use client';
 
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
@@ -27,7 +27,7 @@ interface ProductListClientProps {
     searchQuery: string;
 }
 
-// Memoized to prevent unnecessary re-renders
+// Memoized components
 const MemoizedProductCard = memo(ProductCard);
 const MemoizedUploadCard = memo(UploadPrescriptionCard);
 
@@ -38,13 +38,13 @@ export default function ProductListClient({
     selectedCategory,
     searchQuery
 }: ProductListClientProps) {
-
     const [products, setProducts] = useState<ProductCardType[]>(initialProducts);
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(initialHasMore);
     const [loading, setLoading] = useState(false);
     const observerTarget = useRef<HTMLDivElement>(null);
-    const loadingRef = useRef(false); // Prevent double-loading
+    const loadingRef = useRef(false);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     // Reset when filters change
     useEffect(() => {
@@ -53,16 +53,29 @@ export default function ProductListClient({
         setHasMore(initialHasMore);
         setLoading(false);
         loadingRef.current = false;
+
+        // Cancel any in-flight requests
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
     }, [selectedCategory, searchQuery, initialProducts, initialHasMore]);
 
     // Load more products
     const loadMore = useCallback(async () => {
-        // Double-check with ref to prevent race conditions
         if (loadingRef.current || !hasMore) return;
+
+        // Cancel previous request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
 
         loadingRef.current = true;
         const nextPage = page + 1;
         setLoading(true);
+
+        // Create new abort controller
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
 
         try {
             const params = new URLSearchParams({
@@ -73,7 +86,7 @@ export default function ProductListClient({
 
             const res = await fetch(`/api/products?${params}`, {
                 cache: 'no-store',
-                priority: 'high' // Prioritize this fetch
+                signal: controller.signal,
             });
 
             if (!res.ok) throw new Error('Fetch failed');
@@ -88,16 +101,20 @@ export default function ProductListClient({
             } else {
                 setHasMore(false);
             }
-        } catch (err) {
-            console.error('Load error:', err);
-            setHasMore(false);
+        } catch (err: any) {
+            if (err.name !== 'AbortError') {
+                console.error('Load error:', err);
+                setHasMore(false);
+            }
         } finally {
-            setLoading(false);
-            loadingRef.current = false;
+            if (!controller.signal.aborted) {
+                setLoading(false);
+                loadingRef.current = false;
+            }
         }
     }, [hasMore, page, selectedCategory, searchQuery]);
 
-    // Intersection Observer with better threshold
+    // Intersection Observer - optimized for mobile
     useEffect(() => {
         const target = observerTarget.current;
         if (!target || !hasMore) return;
@@ -109,7 +126,7 @@ export default function ProductListClient({
                 }
             },
             {
-                rootMargin: '200px', // Load early
+                rootMargin: '400px', // Load earlier on mobile
                 threshold: 0
             }
         );
@@ -134,8 +151,8 @@ export default function ProductListClient({
                 ))}
             </div>
 
-            {/* Products Grid - Minimal animations */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+            {/* Products Grid - Simple grid without animations */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
                 {showUploadCard && <MemoizedUploadCard />}
 
                 {products.map((product) => (
@@ -148,21 +165,33 @@ export default function ProductListClient({
                 <div
                     ref={observerTarget}
                     className="h-20 flex items-center justify-center"
-                    style={{ minHeight: '80px' }} // Prevent layout shift
+                    style={{ minHeight: '80px' }}
                 >
                     {loading && <Spinner />}
                 </div>
             )}
 
-            {/* Empty State - Only show if no loading */}
+            {/* Empty State */}
             {products.length === 0 && !loading && (
                 <div className="text-center py-16 space-y-4">
-                    <PackageSearch size={48} className={cn(textColor === 'text-white' ? 'text-white/50' : 'text-gray-300')} />
+                    <PackageSearch
+                        size={48}
+                        className={cn(
+                            textColor === 'text-white'
+                                ? 'text-white/50'
+                                : 'text-gray-300'
+                        )}
+                    />
                     <div>
                         <h3 className={cn('text-xl font-bold', textColor)}>
                             No Products Found
                         </h3>
-                        <p className={cn('mt-2 text-sm', textColor === 'text-white' ? 'text-white/70' : 'text-gray-500')}>
+                        <p className={cn(
+                            'mt-2 text-sm',
+                            textColor === 'text-white'
+                                ? 'text-white/70'
+                                : 'text-gray-500'
+                        )}>
                             Try adjusting your filters
                         </p>
                     </div>
