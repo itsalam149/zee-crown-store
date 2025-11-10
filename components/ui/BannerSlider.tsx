@@ -6,23 +6,27 @@ import Image from 'next/image';
 import { Banner } from '@/lib/types';
 
 // FIX: This component now accepts `banners` as a prop
-export default function BannerSlider({ banners }: { banners: Banner[] }) {
+export default function BannerSlider({ banners = [] }: { banners?: Banner[] }) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Ensure banners is always an array
+    const safeBanners = Array.isArray(banners) ? banners : [];
 
     const resetTimeout = () => {
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
         }
     };
 
     useEffect(() => {
         resetTimeout();
-        if (banners.length > 1) {
+        if (safeBanners.length > 1) {
             timeoutRef.current = setTimeout(
                 () =>
                     setCurrentIndex((prevIndex) =>
-                        prevIndex === banners.length - 1 ? 0 : prevIndex + 1
+                        prevIndex === safeBanners.length - 1 ? 0 : prevIndex + 1
                     ),
                 4000
             );
@@ -30,9 +34,9 @@ export default function BannerSlider({ banners }: { banners: Banner[] }) {
         return () => {
             resetTimeout();
         };
-    }, [currentIndex, banners]);
+    }, [currentIndex, safeBanners]);
 
-    if (!banners || banners.length === 0) {
+    if (!safeBanners || safeBanners.length === 0) {
         return (
             <div className="w-full aspect-[2.5/1] md:aspect-[3/1] lg:aspect-[3.5/1] bg-lighter-gray rounded-lg animate-pulse" />
         );
@@ -41,10 +45,13 @@ export default function BannerSlider({ banners }: { banners: Banner[] }) {
     return (
         <div className="relative w-full mx-auto overflow-hidden rounded-lg shadow-lg">
             <div
-                className="flex transition-transform duration-700 ease-in-out"
-                style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+                className="flex transition-transform duration-700 ease-out"
+                style={{ 
+                    transform: `translate3d(-${currentIndex * 100}%, 0, 0)`,
+                    willChange: 'transform'
+                }}
             >
-                {banners.map((banner) => (
+                {safeBanners.map((banner) => (
                     <div
                         key={banner.id}
                         className="flex-shrink-0 w-full aspect-[2.5/1] md:aspect-[3/1] lg:aspect-[3.5/1] relative"
@@ -61,16 +68,19 @@ export default function BannerSlider({ banners }: { banners: Banner[] }) {
                 ))}
             </div>
 
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
-                {banners.map((_, index) => (
-                    <button
-                        key={index}
-                        onClick={() => setCurrentIndex(index)}
-                        className={`h-2 rounded-full transition-all duration-300 ${currentIndex === index ? 'w-6 bg-primary' : 'w-2 bg-white/70 hover:bg-white'
-                            }`}
-                    />
-                ))}
-            </div>
+            {safeBanners.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
+                    {safeBanners.map((_, index) => (
+                        <button
+                            key={index}
+                            onClick={() => setCurrentIndex(index)}
+                            className={`h-2 rounded-full transition-all duration-200 ease-out ${currentIndex === index ? 'w-6 bg-primary' : 'w-2 bg-white/70 hover:bg-white'
+                                }`}
+                            style={{ willChange: 'width, background-color' }}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

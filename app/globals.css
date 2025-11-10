@@ -3,11 +3,23 @@
 @tailwind utilities;
 
 @layer base {
+    html {
+        scroll-behavior: smooth;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    
     body {
         /* Use the custom grayBG color for consistency */
         @apply bg-grayBG text-dark-gray antialiased font-sans;
     }
-  :root {
+    
+    /* Optimize rendering performance */
+    * {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
         --background: 0 0% 100%;
         --foreground: 224 71.4% 4.1%;
         --card: 0 0% 100%;
@@ -34,7 +46,8 @@
         --chart-5: 27 87% 67%;
         --radius: 0.5rem;
     }
-  .dark {
+
+    .dark {
         --background: 224 71.4% 4.1%;
         --foreground: 210 20% 98%;
         --card: 224 71.4% 4.1%;
@@ -60,6 +73,14 @@
         --chart-4: 280 65% 60%;
         --chart-5: 340 75% 55%;
     }
+
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
 }
 
 /* Add these classes */
@@ -72,17 +93,6 @@
     /* IE and Edge */
     scrollbar-width: none;
     /* Firefox */
-}
-
-
-
-@layer base {
-  * {
-    @apply border-border;
-    }
-  body {
-    @apply bg-background text-foreground;
-    }
 }
 
 @layer utilities {
@@ -100,5 +110,34 @@
     background-image: radial-gradient(1200px 600px at 0% 0%, rgba(255,255,255,0.5), transparent 60%),
                       radial-gradient(800px 400px at 100% 0%, rgba(255,255,255,0.4), transparent 60%),
                       linear-gradient(to bottom, var(--tw-gradient-from), var(--tw-gradient-to));
+  }
+  
+  /* Smooth transitions utility */
+  .smooth-transition {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, opacity;
+  }
+  
+  /* GPU acceleration helper */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    perspective: 1000px;
+    -webkit-perspective: 1000px;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }

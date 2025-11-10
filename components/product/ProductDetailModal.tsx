@@ -35,9 +35,11 @@ export default function ProductDetailModal({ product, closeModal, onNavigate }: 
     const handleAddToCart = async () => {
         setIsAdding(true);
         if (!session) {
-            toast.error('Please login to continue.');
-            closeModal();
-            router.push('/login');
+            closeModal(); // Close modal first
+            // Small delay to allow modal to close before navigation
+            setTimeout(() => {
+                router.push('/login');
+            }, 100);
             setIsAdding(false);
             return;
         }
@@ -71,6 +73,8 @@ export default function ProductDetailModal({ product, closeModal, onNavigate }: 
                 price: product.price,
                 image_url: product.image_url,
                 mrp: product.mrp,
+                description: product.description || '',
+                category: product.category || '',
             },
         };
 
@@ -87,10 +91,13 @@ export default function ProductDetailModal({ product, closeModal, onNavigate }: 
         const checkoutUrl = `/checkout?buyNow=true`;
 
         if (!session) {
-            console.log('No session - redirecting to login');
-            const redirectUrl = encodeURIComponent(checkoutUrl);
-            // Force immediate navigation
-            window.location.href = `/login?redirect=${redirectUrl}`;
+            closeModal(); // Close modal first
+            // Small delay to allow modal to close before navigation
+            setTimeout(() => {
+                const redirectUrl = encodeURIComponent(checkoutUrl);
+                router.push(`/login?redirect=${redirectUrl}`);
+            }, 100);
+            setIsBuying(false);
             return;
         }
 
@@ -108,8 +115,15 @@ export default function ProductDetailModal({ product, closeModal, onNavigate }: 
         <div className="max-h-[90vh] overflow-y-auto">
             <div className="grid grid-cols-1 md:grid-cols-2">
                 {/* Image Section */}
-                <div className="relative w-full aspect-square md:aspect-auto md:min-h-[500px]">
-                    <Image src={product.image_url} alt={product.name} fill style={{ objectFit: 'cover' }} priority />
+                <div className="relative w-full aspect-square md:aspect-auto md:min-h-[500px] overflow-hidden">
+                    <Image 
+                        src={product.image_url} 
+                        alt={product.name} 
+                        fill 
+                        style={{ objectFit: 'cover' }} 
+                        priority 
+                        className="object-cover"
+                    />
                 </div>
 
                 {/* Content Section */}

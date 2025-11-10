@@ -91,10 +91,9 @@ export default function OrderCard({ order }: { order: Order }) {
     return (
         <Link href={`/my-orders/${order.id}`} className="block group">
             <motion.div
-                whileHover={{ y: -4, scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className="relative bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 group-hover:border-blue-200"
+                whileHover={{ y: -2 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25, duration: 0.2 }}
+                className="relative bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-200 ease-out overflow-hidden border border-gray-100 group-hover:border-blue-200"
             >
                 {/* Gradient accent bar at top */}
                 <div className={`h-1.5 bg-gradient-to-r ${config.gradient}`} />
@@ -106,7 +105,7 @@ export default function OrderCard({ order }: { order: Order }) {
                         <div className="flex-1 min-w-0">
                             {/* Order ID with icon */}
                             <div className="flex items-center gap-2 mb-2">
-                                <div className={`p-1.5 rounded-lg ${config.bg} group-hover:scale-110 transition-transform`}>
+                                <div className={`p-1.5 rounded-lg ${config.bg} transition-opacity duration-200 ease-out group-hover:opacity-90`}>
                                     <StatusIcon className={`h-4 w-4 ${config.text}`} />
                                 </div>
                                 <h3 className="font-bold text-lg text-gray-900 truncate">
@@ -141,11 +140,8 @@ export default function OrderCard({ order }: { order: Order }) {
                         <div className="flex items-center gap-2 mt-4">
                             <div className="flex -space-x-3">
                                 {productImages.map((img, idx) => (
-                                    <motion.div
+                                    <div
                                         key={idx}
-                                        initial={{ opacity: 0, scale: 0 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ delay: idx * 0.1 }}
                                         className="w-10 h-10 rounded-lg border-2 border-white shadow-sm overflow-hidden bg-gray-100"
                                     >
                                         <img
@@ -153,7 +149,7 @@ export default function OrderCard({ order }: { order: Order }) {
                                             alt="Product"
                                             className="w-full h-full object-cover"
                                         />
-                                    </motion.div>
+                                    </div>
                                 ))}
                             </div>
                             {order.order_items.length > 3 && (

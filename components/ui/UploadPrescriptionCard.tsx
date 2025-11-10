@@ -11,10 +11,11 @@ export default function UploadPrescriptionCard() {
     return (
         <button
             onClick={handlePress}
-            className="group block w-full text-left rounded-xl overflow-hidden bg-white shadow-subtle transition-all duration-300 ease-out-expo hover:shadow-medium hover:-translate-y-1"
+            className="group block w-full text-left rounded-xl overflow-hidden bg-white shadow-subtle transition-all duration-200 ease-out hover:shadow-medium"
+            style={{ willChange: 'box-shadow' }}
         >
             <div className="relative w-full aspect-square overflow-hidden bg-theme-green flex items-center justify-center">
-                <Camera className="h-1/3 w-1/3 text-theme-green-fg transition-transform duration-500 ease-out-expo group-hover:scale-105" />
+                <Camera className="h-1/3 w-1/3 text-theme-green-fg transition-opacity duration-200 ease-out group-hover:opacity-90" />
             </div>
             <div className="p-3">
                 <h3 className="text-sm font-semibold truncate text-dark-gray">Upload Prescription</h3>

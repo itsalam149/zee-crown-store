@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { useMemo, Suspense } from 'react';
 import { cn } from '@/lib/utils';
 import Loading from './loading'; // Keep loading for Suspense
+import { ProductModalProvider } from '@/components/product/ProductModalProvider';
 
 const categoryBgClasses: { [key: string]: string } = {
     // --- THIS IS THE UPDATED LINE ---
@@ -37,24 +38,28 @@ function MainLayoutContent({ children, modal }: MainLayoutProps) {
         : 'from-grayBG to-gray-50';
 
     return (
-        <div className={cn(
-            "flex flex-col min-h-screen bg-gradient-to-b transition-colors duration-500 overflow-x-hidden",
-            bgGradient // <-- This will now be the light grey gradient for "All"
-        )}>
+        <ProductModalProvider>
+            <div className={cn(
+                "flex flex-col min-h-screen bg-gradient-to-b transition-colors duration-300 ease-out overflow-x-hidden",
+                bgGradient // <-- This will now be the light grey gradient for "All"
+            )}
+            style={{ willChange: 'background-color' }}
+            >
 
-            <Navbar />
+                <Navbar />
 
-            {/*
-              This is correct. No container, no pt-16.
-              Each page (like page.tsx) will add its own padding.
-            */}
-            <main className="flex-grow py-6">
-                {children}
-                {modal}
-            </main>
+                {/*
+                  This is correct. No container, no pt-16.
+                  Each page (like page.tsx) will add its own padding.
+                */}
+                <main className="flex-grow py-6">
+                    {children}
+                    {modal}
+                </main>
 
-            {/* Footer is still removed */}
-        </div>
+                {/* Footer is still removed */}
+            </div>
+        </ProductModalProvider>
     );
 }
 

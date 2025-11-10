@@ -54,14 +54,14 @@ export default function CategoryItem({ name, Icon, isSelected }: CategoryItemPro
             <div
                 className={cn(
                     'w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center',
-                    'transition-all duration-200 ease-out-expo border',
+                    'transition-all duration-200 ease-out border',
                     isSelected
-                        ? `${gradientClass} shadow-inner scale-95 translate-y-px border-black/20`
+                        ? `${gradientClass} shadow-inner border-black/20`
                         : 'bg-white/80 backdrop-blur-md shadow-lg border-b-4 border-gray-200/80 border-white/30',
-                    !isSelected && 'group-hover:scale-105 group-hover:shadow-lifted group-hover:-translate-y-0.5',
-                    'group-active:scale-95 group-active:translate-y-px',
+                    !isSelected && 'group-hover:shadow-lifted',
                     isPending && "animate-pulse"
                 )}
+                style={{ willChange: isPending ? 'auto' : 'box-shadow, border-color' }}
             >
                 <Icon
                     className={cn(

@@ -66,18 +66,18 @@ const Navbar = () => {
     const mobileMenuVariants: Variants = {
         hidden: {
             opacity: 0,
-            y: "-10%",
-            transition: { duration: 0.2, ease: "easeIn" }
+            y: "-5%",
+            transition: { duration: 0.15, ease: [0.4, 0, 0.2, 1] }
         },
         visible: {
             opacity: 1,
             y: 0,
-            transition: { duration: 0.25, ease: "easeOut" }
+            transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] }
         },
         exit: {
             opacity: 0,
-            y: "-10%",
-            transition: { duration: 0.2, ease: "easeIn" }
+            y: "-5%",
+            transition: { duration: 0.15, ease: [0.4, 0, 0.2, 1] }
         }
     };
 
@@ -233,19 +233,19 @@ const Navbar = () => {
                         <nav className="flex flex-col gap-1 px-4 pt-4 text-base font-medium">
                             {user ? (
                                 <>
-                                    <Link href="/profile" className="text-gray-700 hover:text-primary py-3 flex items-center gap-3 rounded-md hover:bg-gray-50 px-3 transition-colors duration-150"><UserCog className="h-5 w-5 text-gray-500" />Profile</Link>
-                                    <Link href="/my-orders" className="text-gray-700 hover:text-primary py-3 flex items-center gap-3 rounded-md hover:bg-gray-50 px-3 transition-colors duration-150"><Package className="h-5 w-5 text-gray-500" />My Orders</Link>
-                                    <Link href="/addresses" className="text-gray-700 hover:text-primary py-3 flex items-center gap-3 rounded-md hover:bg-gray-50 px-3 transition-colors duration-150"><MapPin className="h-5 w-5 text-gray-500" />My Addresses</Link>
+                                    <Link href="/profile" className="text-gray-700 hover:text-primary py-3 flex items-center gap-3 rounded-md hover:bg-gray-50 px-3 transition-all duration-200 ease-out"><UserCog className="h-5 w-5 text-gray-500" />Profile</Link>
+                                    <Link href="/my-orders" className="text-gray-700 hover:text-primary py-3 flex items-center gap-3 rounded-md hover:bg-gray-50 px-3 transition-all duration-200 ease-out"><Package className="h-5 w-5 text-gray-500" />My Orders</Link>
+                                    <Link href="/addresses" className="text-gray-700 hover:text-primary py-3 flex items-center gap-3 rounded-md hover:bg-gray-50 px-3 transition-all duration-200 ease-out"><MapPin className="h-5 w-5 text-gray-500" />My Addresses</Link>
                                     <hr className="my-3 border-gray-100" />
                                     <button
                                         onClick={handleSignOut}
-                                        className="text-red-600 hover:bg-red-50 py-3 flex items-center gap-3 rounded-md px-3 text-left w-full transition-colors duration-150"
+                                        className="text-red-600 hover:bg-red-50 py-3 flex items-center gap-3 rounded-md px-3 text-left w-full transition-all duration-200 ease-out"
                                     >
                                         <LogOut className="h-5 w-5" /> Log out
-                                    </button>
-                                </>
+</button>
+                                </> 
                             ) : (
-                                <Link href="/login" className="text-gray-700 hover:text-primary py-3 flex items-center gap-3 rounded-md hover:bg-gray-50 px-3 transition-colors duration-150">Login / Sign Up</Link>
+                                <Link href="/login" className="text-gray-700 hover:text-primary py-3 flex items-center gap-3 rounded-md hover:bg-gray-50 px-3 transition-all duration-200 ease-out">Login / Sign Up</Link>
                             )}
                         </nav>
                     </motion.div>

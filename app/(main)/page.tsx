@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import { Banner, ProductCardType } from '@/lib/types';
-import BannerSlider from '@/components/ui/BannerSlider';
+import BannerSliderWrapper from '@/components/ui/BannerSliderWrapper';
 import Loading from './loading';
 import ProductListClient from './ProductListClient';
 import { createClient } from '@/lib/supabase-server';
@@ -88,8 +88,7 @@ async function HomePageContent({ searchParams }: HomePageProps) {
         <div className="container mx-auto px-4 sm:px-6 md:px-8 space-y-6 pb-24">
             {!searchQuery && (
                 <div className="mt-0">
-                    {/* This prop pass is now correct */}
-                    <BannerSlider banners={banners} />
+                    <BannerSliderWrapper banners={banners} />
                 </div>
             )}
 

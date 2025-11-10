@@ -2,13 +2,13 @@
 'use client';
 
 // --- 1. IMPORT Suspense ---
-import { useState, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { createClient } from '@/lib/supabase-client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import Spinner from '@/components/ui/Spinner'; // Import your spinner
 
@@ -20,6 +20,23 @@ function LoginPageContent() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+
+    // Track if user successfully logged in
+    const loginSuccessRef = useRef(false);
+
+    const redirect = searchParams.get('redirect');
+    const hasBuyNowRedirect = redirect && redirect.includes('buyNow=true');
+
+    // Clear buyNowItem when user navigates away without logging in
+    useEffect(() => {
+        // Clear buyNowItem when component unmounts if user didn't log in
+        return () => {
+            if (hasBuyNowRedirect && !loginSuccessRef.current) {
+                sessionStorage.removeItem('buyNowItem');
+                localStorage.removeItem('buyNowItem');
+            }
+        };
+    }, [hasBuyNowRedirect]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -41,6 +58,7 @@ function LoginPageContent() {
             }
             setLoading(false);
         } else {
+            loginSuccessRef.current = true; // Mark login as successful
             toast.success('Signed in successfully!');
             const redirect = searchParams.get('redirect'); // This line is safe now
             router.push(redirect || '/');
@@ -49,9 +67,29 @@ function LoginPageContent() {
         }
     };
 
+    const hasRedirect = !!redirect;
+
+    const handleGoBack = () => {
+        // Clear buyNowItem if it exists (prevents redirect loop)
+        if (hasBuyNowRedirect) {
+            sessionStorage.removeItem('buyNowItem');
+            localStorage.removeItem('buyNowItem');
+        }
+        router.push('/');
+    };
+
     return (
         <div className="flex items-center justify-center min-h-screen bg-grayBG">
             <div className="w-full max-w-sm p-8 space-y-6 bg-white rounded-xl shadow-medium">
+                {hasRedirect && (
+                    <button
+                        onClick={handleGoBack}
+                        className="flex items-center gap-2 text-sm text-gray-600 hover:text-primary mb-2"
+                    >
+                        <ArrowLeft size={16} />
+                        Back to Home
+                    </button>
+                )}
                 <div className="text-center">
                     <Image src="/icon.png" alt="Zee Crown Logo" width={50} height={50} className="mx-auto" />
                     <h1 className="mt-4 text-2xl font-bold text-dark-gray">Welcome Back</h1>

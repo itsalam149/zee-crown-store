@@ -23,7 +23,7 @@ declare const window: any;
 interface BuyNowItem {
     product_id: string;
     quantity: number;
-    products: Pick<Product, 'id' | 'name' | 'price' | 'image_url' | 'mrp'>;
+    products: Pick<Product, 'id' | 'name' | 'price' | 'image_url' | 'mrp' | 'description' | 'category'>;
 }
 
 // --- Main Checkout Page Component Logic ---
@@ -56,6 +56,16 @@ function CheckoutPageContent() {
             effectiveSession = liveSession || null;
         }
         if (!effectiveSession) {
+            // If buyNow flow but no item in storage, redirect to home instead of login
+            // This prevents redirect loops if user came back from login page
+            if (isBuyNowFlow) {
+                const itemString = sessionStorage.getItem('buyNowItem') || localStorage.getItem('buyNowItem');
+                if (!itemString) {
+                    // No item found, user probably navigated back from login
+                    router.push('/');
+                    return;
+                }
+            }
             const redirectUrl = isBuyNowFlow ? '/checkout?buyNow=true' : '/checkout';
             router.push(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
             return;
@@ -69,29 +79,17 @@ function CheckoutPageContent() {
         if (isBuyNowFlow) {
             try {
                 const itemString = sessionStorage.getItem('buyNowItem') || localStorage.getItem('buyNowItem');
-                if (itemString) {
-                    const buyNowItem: BuyNowItem = JSON.parse(itemString);
-                    itemsToCheckout = [{
-                        id: `buyNow-${buyNowItem.product_id}`,
-                        user_id: effectiveSession.user.id,
-                        product_id: buyNowItem.product_id,
-                        quantity: buyNowItem.quantity,
-                        created_at: new Date().toISOString(),
-                        products: {
-                            ...buyNowItem.products,
-                            description: '',
-                            category: '',
-                            created_at: new Date().toISOString(),
-                        }
-                    }];
-                } else {
+                if (!itemString) {
+                    // If buyNow flow but no item in storage, try to get from URL params
                     const pid = searchParams.get('pid');
                     const qty = parseInt(searchParams.get('qty') || '1', 10) || 1;
                     if (!pid) {
-                        toast.error("Buy Now item not found. Please try again.");
+                        // No item found, redirect to home
+                        toast.error('No item found. Please select a product again.');
                         router.push('/');
                         return;
                     }
+                    // Fetch product from database
                     const { data: product, error: pErr } = await supabase
                         .from('products')
                         .select('*')
@@ -110,6 +108,21 @@ function CheckoutPageContent() {
                         created_at: new Date().toISOString(),
                         products: {
                             ...product,
+                        }
+                    }];
+                } else {
+                    const buyNowItem: BuyNowItem = JSON.parse(itemString);
+                    itemsToCheckout = [{
+                        id: `buyNow-${buyNowItem.product_id}`,
+                        user_id: effectiveSession.user.id,
+                        product_id: buyNowItem.product_id,
+                        quantity: buyNowItem.quantity,
+                        created_at: new Date().toISOString(),
+                        products: {
+                            ...buyNowItem.products,
+                            description: buyNowItem.products.description || '',
+                            category: buyNowItem.products.category || '',
+                            created_at: new Date().toISOString(),
                         }
                     }];
                 }

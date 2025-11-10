@@ -59,11 +59,12 @@ export default function OptimizedImage({
                     setIsLoading(false);
                 }}
                 className={cn(
-                    "transition-opacity duration-300 ease-in-out",
+                    "transition-opacity duration-200 ease-out",
                     isLoading ? "opacity-0" : "opacity-100",
                     objectFit === 'cover' && "object-cover",
                     objectFit === 'contain' && "object-contain"
                 )}
+                style={{ willChange: isLoading ? 'opacity' : 'auto' }}
             />
         </div>
     );

@@ -12,8 +12,11 @@ export default function ProductModal({ params }: { params: { slug: string } }) {
     const router = useRouter();
     const supabase = createClient();
     const [product, setProduct] = useState<Product | null>(null);
-    const [show, setShow] = useState(false);
     const dialogRef = useRef<HTMLDivElement>(null);
+
+    const handleClose = () => {
+        setTimeout(() => router.back(), 100);
+    };
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -24,24 +27,14 @@ export default function ProductModal({ params }: { params: { slug: string } }) {
     }, [params.slug, supabase]);
 
     useEffect(() => {
-        setShow(true);
-        document.body.style.overflow = 'hidden';
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape') handleClose();
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => {
-            document.body.style.overflow = 'auto';
             window.removeEventListener('keydown', handleKeyDown);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-
-    const handleClose = () => {
-        setShow(false);
-        // This delay allows the closing animation to finish before navigating back
-        setTimeout(() => router.back(), 300);
-    };
 
     const onBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === dialogRef.current) handleClose();
@@ -51,25 +44,30 @@ export default function ProductModal({ params }: { params: { slug: string } }) {
         <div
             ref={dialogRef}
             onClick={onBackdropClick}
-            className={`fixed inset-0 z-50 flex items-end md:items-center justify-center transition-colors duration-300 ease-in-out ${show ? 'bg-black/50' : 'bg-transparent'}`}
+            className="fixed inset-0 z-50 flex items-end justify-center"
         >
-            <div
-                className={`relative bg-white w-full rounded-t-2xl md:rounded-xl shadow-lifted max-w-4xl transition-transform duration-300 ease-out-expo ${show ? 'translate-y-0' : 'translate-y-full md:translate-y-10'}`}
+            <div 
+                className="relative bg-white w-full rounded-t-2xl md:rounded-xl md:max-w-4xl md:mb-8 shadow-lifted"
+                style={{
+                    animation: 'slideUp 0.3s ease-out',
+                    maxHeight: '90vh',
+                }}
+                onClick={(e) => e.stopPropagation()}
             >
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-6 p-2 md:hidden">
                     <div className="w-12 h-1.5 bg-white/70 rounded-full" />
                 </div>
                 <button
                     onClick={handleClose}
-                    className="absolute top-4 right-4 z-30 bg-gray-100 rounded-full p-1 text-gray-700 hover:bg-red hover:text-white hover:scale-110 transition-all duration-200 hidden md:block"
+                    className="absolute top-4 right-4 z-30 bg-gray-100 rounded-full p-1 text-gray-700 hover:bg-red hover:text-white transition-colors hidden md:block"
                 >
                     <X size={20} />
                 </button>
 
-                {product ? (
-                    // Pass the handleClose function down to the child
+                {product && (
                     <ProductDetailModal product={product} closeModal={handleClose} />
-                ) : (
+                )}
+                {!product && (
                     <div className="flex items-center justify-center w-full h-[70vh] md:h-auto">
                         <Spinner />
                     </div>

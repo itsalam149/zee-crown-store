@@ -20,7 +20,7 @@ export default function CategoryBar() {
                         <Link
                             key={name}
                             href={href}
-                            className="flex items-center gap-2 text-sm text-dark-gray hover:text-primary whitespace-nowrap"
+                            className="flex items-center gap-2 text-sm text-dark-gray hover:text-primary whitespace-nowrap transition-colors duration-200 ease-out"
                         >
                             <Icon className="h-4 w-4" />
                             <span className="capitalize">{name}</span>

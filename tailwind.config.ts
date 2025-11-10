@@ -96,17 +96,19 @@ const config: Config = {
 
 			transitionTimingFunction: {
 				'out-expo': 'cubic-bezier(0.19, 1, 0.22, 1)',
+				'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
+				'smoother': 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
 			},
 
 			animation: {
-				'fade-in-up': 'fade-in-up 0.5s ease-out forwards',
+				'fade-in-up': 'fade-in-up 0.3s ease-out forwards',
 				'spin-slow': 'spin 3s linear infinite',
 			},
 
 			keyframes: {
 				'fade-in-up': {
-					'0%': { opacity: '0', transform: 'translateY(10px)' },
-					'100%': { opacity: '1', transform: 'translateY(0)' },
+					'0%': { opacity: '0', transform: 'translate3d(0, 10px, 0)' },
+					'100%': { opacity: '1', transform: 'translate3d(0, 0, 0)' },
 				},
 				spin: {
 					'0%': { transform: 'rotate(0deg)' },

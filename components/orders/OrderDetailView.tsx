@@ -174,9 +174,8 @@ const OrderItemCard = ({ item, index }: { item: any, index: number }) => (
     <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: index * 0.1 }}
-        whileHover={{ scale: 1.02 }}
-        className="group relative flex items-center gap-4 p-4 border-2 border-gray-100 rounded-2xl bg-white shadow-sm hover:shadow-md hover:border-blue-200 transition-all"
+        transition={{ delay: index * 0.1, duration: 0.2 }}
+        className="group relative flex items-center gap-4 p-4 border-2 border-gray-100 rounded-2xl bg-white shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-200 ease-out"
     >
         <div className="relative w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 shadow-md">
             <Image
@@ -184,7 +183,7 @@ const OrderItemCard = ({ item, index }: { item: any, index: number }) => (
                 alt={item.products.name}
                 fill
                 sizes="96px"
-                className="object-cover group-hover:scale-110 transition-transform duration-300"
+                className="object-cover"
             />
             <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-bold">
                 x{item.quantity}
