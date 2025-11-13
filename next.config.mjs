@@ -2,10 +2,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     images: {
-        formats: ['image/avif', 'image/webp'], // Modern formats first
-        deviceSizes: [640, 750, 828, 1080, 1200, 1920], // Mobile-first sizes
-        imageSizes: [16, 32, 48, 64, 96, 128, 256, 384], // Thumbnail sizes
-        minimumCacheTTL: 60 * 60 * 24 * 7, // Cache for 1 week
+        unoptimized: true, // Disable Vercel Image Optimization to avoid hitting transformation limits
         dangerouslyAllowSVG: true,
         contentDispositionType: 'attachment',
         contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
