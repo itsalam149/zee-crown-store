@@ -78,7 +78,6 @@ export default function ProductModal({ params }: { params: { slug: string } }) {
     useEffect(() => {
         // If pathname changes to something other than the current product, hide the modal
         if (show && !pathname.includes(`/product/${params.slug}`)) {
-            console.log('Route changed, closing modal');
             setShow(false);
             document.body.style.overflow = 'auto';
         }
@@ -100,11 +99,15 @@ export default function ProductModal({ params }: { params: { slug: string } }) {
             className={`fixed inset-0 z-50 flex items-end md:items-center justify-center transition-colors duration-300 ease-in-out ${show ? 'bg-black/50' : 'bg-transparent'}`}
         >
             <div
-                className={`relative bg-white w-full rounded-t-2xl md:rounded-xl shadow-lifted max-w-4xl transition-all duration-[350ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                className={`relative bg-white w-full rounded-t-2xl md:rounded-xl shadow-lifted max-w-4xl transition-all ${
                     show 
                         ? 'translate-y-0 opacity-100' 
                         : 'translate-y-full md:translate-y-10 opacity-0'
                 }`}
+                style={{
+                    transitionDuration: '350ms',
+                    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
+                }}
             >
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-6 p-2 md:hidden">
                     <div className="w-12 h-1.5 bg-white/70 rounded-full" />

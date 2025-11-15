@@ -204,18 +204,40 @@ const Navbar = () => {
             {/* Mobile Search Overlay */}
             <AnimatePresence>
                 {isSearchOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute top-0 left-0 right-0 h-16 bg-background flex items-center px-4 md:hidden border-b z-40"
-                    >
-                        <SearchBar onSearch={() => setIsSearchOpen(false)} autoFocus />
-                        <Button variant="ghost" size="icon" className="ml-2" onClick={() => setIsSearchOpen(false)}>
-                            <X className="h-5 w-5" />
-                        </Button>
-                    </motion.div>
+                    <>
+                        {/* Backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30 md:hidden"
+                            onClick={() => setIsSearchOpen(false)}
+                        />
+                        {/* Search Bar */}
+                        <motion.div
+                            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                            transition={{ 
+                                duration: 0.25,
+                                ease: [0.4, 0, 0.2, 1]
+                            }}
+                            className="absolute top-0 left-0 right-0 h-16 bg-background flex items-center px-3 md:hidden border-b z-40 shadow-lg"
+                        >
+                            <div className="flex-1">
+                                <SearchBar onSearch={() => setIsSearchOpen(false)} autoFocus />
+                            </div>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="ml-2 h-10 w-10 active:scale-95 transition-transform duration-200" 
+                                onClick={() => setIsSearchOpen(false)}
+                            >
+                                <X className="h-5 w-5" />
+                            </Button>
+                        </motion.div>
+                    </>
                 )}
             </AnimatePresence>
 

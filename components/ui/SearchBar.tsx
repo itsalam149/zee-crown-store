@@ -102,10 +102,19 @@ export default function SearchBar({
                 {/* Container for focus effect */}
                 <div className={cn(
                     "relative flex items-center bg-white border border-gray-300 rounded-lg",
-                    "transition-all duration-200 ease-in-out", // Added transition
-                    isFocused ? "ring-2 ring-primary ring-opacity-50 border-transparent shadow-md" : "hover:border-gray-400" // Added shadow on focus
+                    "transition-all duration-300 ease-out",
+                    "md:rounded-lg",
+                    isFocused 
+                        ? "ring-2 ring-primary ring-opacity-50 border-transparent shadow-lg scale-[1.01]" 
+                        : "hover:border-gray-400",
+                    // Mobile specific improvements
+                    "active:scale-[0.99] touch-manipulation"
                 )}>
-                    <Search className="absolute left-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                    <Search className={cn(
+                        "absolute left-3 text-gray-400 pointer-events-none transition-all duration-300",
+                        "h-4 w-4 md:h-4 md:w-4",
+                        isFocused ? "text-primary scale-110" : ""
+                    )} />
                     <input
                         ref={inputRef}
                         type="text"
@@ -115,27 +124,39 @@ export default function SearchBar({
                         onBlur={() => setIsFocused(false)}
                         placeholder={placeholder}
                         className={cn(
-                            "w-full pl-10 pr-10 py-2 rounded-lg", // Ensure rounded corners match container
-                            "focus:outline-none", // Outline handled by parent div ring
-                            "bg-transparent text-gray-900 placeholder-gray-500 text-sm",
-                            "transition-all duration-200" // Transition for input itself (optional)
+                            "w-full rounded-lg bg-transparent text-gray-900 placeholder-gray-500",
+                            "focus:outline-none",
+                            // Mobile optimizations
+                            "text-base md:text-sm", // Prevent zoom on iOS (text-base = 16px)
+                            "pl-10 pr-10 py-2.5 md:py-2", // Larger touch target on mobile
+                            "transition-all duration-300",
+                            // Better mobile experience
+                            "touch-manipulation"
                         )}
                         aria-label="Search products"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck="false"
                     />
                     {/* --- Icons Container --- */}
-                    <div className="absolute right-3 flex items-center h-full">
+                    <div className="absolute right-3 flex items-center h-full gap-2">
                         {query && !isUpdatingURL && (
                             <button
                                 type="button"
                                 onClick={handleClear}
-                                className="p-1 text-gray-400 hover:text-gray-600 transition-colors duration-150"
+                                className={cn(
+                                    "p-1.5 md:p-1 text-gray-400 hover:text-gray-600",
+                                    "active:scale-95 transition-all duration-200",
+                                    "touch-manipulation" // Better mobile tap
+                                )}
                                 aria-label="Clear search"
                             >
-                                <X className="h-4 w-4" />
+                                <X className="h-5 w-5 md:h-4 md:w-4" />
                             </button>
                         )}
                         {isUpdatingURL && (
-                            <Loader2 className="h-4 w-4 text-gray-400 animate-spin" />
+                            <Loader2 className="h-5 w-5 md:h-4 md:w-4 text-primary animate-spin" />
                         )}
                     </div>
                     {/* --- End Icons Container --- */}

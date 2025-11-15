@@ -55,7 +55,6 @@ export default function ProductDetailModal({ product, closeModal, onNavigate }: 
     };
 
     const handleBuyNow = async () => {
-        console.log('Buy Now clicked');
         setIsBuying(true);
 
         // Notify parent that we're navigating
@@ -80,7 +79,6 @@ export default function ProductDetailModal({ product, closeModal, onNavigate }: 
 
         try {
             sessionStorage.setItem('buyNowItem', JSON.stringify(buyNowItem));
-            console.log('Stored in sessionStorage:', buyNowItem);
         } catch (e) {
             console.error('Failed to store Buy Now item:', e);
             toast.error('Could not proceed to checkout. Please try again.');
@@ -102,7 +100,6 @@ export default function ProductDetailModal({ product, closeModal, onNavigate }: 
         }
 
         // For authenticated users, force immediate navigation
-        console.log('Navigating to checkout');
         toast.loading('Redirecting to checkout...', { duration: 500 });
 
         // Use window.location for immediate navigation
