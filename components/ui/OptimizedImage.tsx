@@ -1,7 +1,7 @@
 // components/ui/OptimizedImage.tsx
 'use client';
 import Image from 'next/image';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface OptimizedImageProps {
@@ -14,8 +14,6 @@ interface OptimizedImageProps {
     priority?: boolean;
     sizes?: string;
     objectFit?: 'cover' | 'contain' | 'fill';
-    mobileQuality?: number;
-    desktopQuality?: number;
 }
 
 export default function OptimizedImage({
@@ -28,15 +26,9 @@ export default function OptimizedImage({
     priority = false,
     sizes,
     objectFit = 'cover',
-    mobileQuality = 60, // ⬅️ lower quality for mobile (saves ~40%)  
-    desktopQuality = 75, // ⬅️ balanced for larger screens
 }: OptimizedImageProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(false);
-
-    // Dynamically adjust quality based on screen size
-    const isMobile = useMemo(() => typeof window !== 'undefined' && window.innerWidth < 768, []);
-    const quality = isMobile ? mobileQuality : desktopQuality;
 
     return (
         <div className={cn("relative overflow-hidden", fill && "w-full h-full", className)}>
@@ -50,7 +42,7 @@ export default function OptimizedImage({
                 width={!fill ? width : undefined}
                 height={!fill ? height : undefined}
                 sizes={sizes || "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"}
-                quality={quality}
+                // Removed quality prop to prevent any image transformations
                 loading={priority ? 'eager' : 'lazy'}
                 priority={priority}
                 onLoad={() => setIsLoading(false)}
